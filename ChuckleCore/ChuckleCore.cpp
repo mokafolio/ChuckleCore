@@ -2,13 +2,14 @@
 
 namespace chuckle
 {
-static PerlinNoise & noiseInstance()
+
+PerlinNoise & noiseInstance()
 {
     static PerlinNoise s_noise;
     return s_noise;
 }
 
-static Randomizer & randomizerInstance()
+Randomizer & randomizerInstance()
 {
     static Randomizer s_rnd;
     return s_rnd;

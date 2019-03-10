@@ -22,8 +22,8 @@ using namespace paper;
 using namespace luke;
 using namespace dab;
 
-STICK_API static PerlinNoise & noiseInstance();
-STICK_API static Randomizer & randomizerInstance();
+STICK_API PerlinNoise & noiseInstance();
+STICK_API Randomizer & randomizerInstance();
 
 STICK_API void setRandomSeed(typename Randomizer::IntegerType _seed);
 STICK_API void randomizeSeed();
