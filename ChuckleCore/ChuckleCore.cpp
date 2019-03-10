@@ -75,6 +75,142 @@ Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w)
     return noiseInstance().noise(_x, _y, _z, _w);
 }
 
+RenderWindow::RenderWindow() : m_renderDevice(nullptr)
+{
+}
+
+Error RenderWindow::open(const WindowSettings & _settings)
+{
+    Error ret = Window::open(_settings);
+    if (ret)
+        return ret;
+    auto res = createRenderDevice();
+    if (!res)
+        return res.error();
+    m_renderDevice = res.get();
+    m_tmpImage = makeUnique<ImageRGBA8>(widthInPixels(), heightInPixels());
+    return Error();
+}
+
+ImageUniquePtr RenderWindow::frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h)
+{
+    ImageUniquePtr img = makeUnique<ImageRGBA8>(_w, _h);
+    m_renderDevice->readPixels(_x, _y, _w, _h, TextureFormat::RGBA8, (void *)img->bytePtr());
+    return img;
+}
+
+ImageUniquePtr RenderWindow::frameImage()
+{
+    return frameImage(0, 0, widthInPixels(), heightInPixels());
+}
+
+Error RenderWindow::saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h)
+{
+    m_tmpImage->resize(_w, _h);
+    m_renderDevice->readPixels(_x, _y, _w, _h, TextureFormat::RGBA8, (void *)m_tmpImage->bytePtr());
+    return m_tmpImage->save(_path);
+}
+
+Error RenderWindow::saveFrame(const char * _path)
+{
+    return saveFrame(_path, 0, 0, widthInPixels(), heightInPixels());
+}
+
+RenderDevice & RenderWindow::renderDevice() const
+{
+    STICK_ASSERT(m_renderDevice);
+    return *m_renderDevice;
+}
+
+void RenderWindow::setDrawFunc(DrawFunction _func)
+{
+    m_drawFunc = _func;
+}
+
+Error RenderWindow::run()
+{
+    if (!m_drawFunc)
+        return Error(ec::InvalidOperation,
+                     "Attempting to run with no draw function",
+                     STICK_FILE,
+                     STICK_LINE);
+
+    while (!shouldClose())
+    {
+        auto now = m_clock.now();
+        Float64 dur = m_lastFrameTime ? (now - *m_lastFrameTime).seconds() : 1.0 / 60.0;
+        luke::pollEvents();
+        m_renderDevice->beginFrame();
+        Error err = m_drawFunc(dur);
+        if (err)
+            return err;
+        err = m_renderDevice->endFrame();
+        if (err)
+            return err;
+        m_lastFrameTime = now;
+        Window::swapBuffers();
+    }
+
+    return Error();
+}
+
+PaperWindow::PaperWindow() :
+m_bAutoResize(true)
+{
+}
+
+Error PaperWindow::open(const WindowSettings & _settings)
+{
+    this->addEventCallback([this](const WindowResizeEvent & _evt) {
+        if (this->m_bAutoResize)
+        {
+            this->m_doc.setSize(_evt.width(), _evt.height());
+            this->m_paperRenderer.setViewport(0, 0, this->widthInPixels(), this->heightInPixels());
+        }
+    });
+
+    Error err = RenderWindow::open(_settings);
+    if (err)
+        return err;
+
+    return m_paperRenderer.init(m_doc);
+}
+
+Document & PaperWindow::document()
+{
+    return m_doc;
+}
+
+const Document & PaperWindow::document() const
+{
+    return m_doc;
+}
+
+tarp::TarpRenderer & PaperWindow::paperRenderer()
+{
+    return m_paperRenderer;
+}
+
+const tarp::TarpRenderer & PaperWindow::paperRenderer() const
+{
+    return m_paperRenderer;
+}
+
+void PaperWindow::drawDocument(RenderPass * _pass)
+{
+    _pass->drawCustom([this] { return m_paperRenderer.draw(); });
+}
+
+void PaperWindow::setAutoResize(bool _b)
+{
+    m_bAutoResize = _b;
+}
+
+bool PaperWindow::autoResize() const
+{
+    return m_bAutoResize;
+}
+
 namespace path
 {
 void longestCurves(Path * _path, Size _count, DynamicArray<Curve> & _output)
@@ -134,7 +270,7 @@ void applyNoise(
             seg.setPosition(pos);
         }
     }
-    
+
     for (Item * child : _item->children())
         applyNoise(child, _noiseSeed, _noiseDiv, _noiseScale, _sampleDist);
 }

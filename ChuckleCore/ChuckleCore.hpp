@@ -3,16 +3,15 @@
 
 #include <Crunch/PerlinNoise.hpp>
 #include <Crunch/Randomizer.hpp>
-
+#include <Dab/Dab.hpp>
+#include <Luke/Luke.hpp>
 #include <Paper2/Document.hpp>
 #include <Paper2/Group.hpp>
 #include <Paper2/Path.hpp>
 #include <Paper2/Symbol.hpp>
 #include <Paper2/Tarp/TarpRenderer.hpp>
-
-#include <Dab/Dab.hpp>
-
-#include <Luke/Luke.hpp>
+#include <Pic/Image.hpp>
+#include <Stick/SystemClock.hpp>
 
 namespace chuckle
 {
@@ -21,6 +20,7 @@ using namespace crunch;
 using namespace paper;
 using namespace luke;
 using namespace dab;
+using namespace pic;
 
 STICK_API PerlinNoise & noiseInstance();
 STICK_API Randomizer & randomizerInstance();
@@ -38,6 +38,50 @@ STICK_API Float32 noise(Float32 _x);
 STICK_API Float32 noise(Float32 _x, Float32 _y);
 STICK_API Float32 noise(Float32 _x, Float32 _y, Float32 _z);
 STICK_API Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w);
+
+class STICK_API RenderWindow : public Window
+{
+  public:
+    using DrawFunction = std::function<Error(Float64)>;
+
+    RenderWindow();
+    virtual ~RenderWindow() = default;
+
+    Error open(const WindowSettings & _settings);
+    ImageUniquePtr frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
+    ImageUniquePtr frameImage();
+    Error saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
+    Error saveFrame(const char * _path);
+    RenderDevice & renderDevice() const;
+    void setDrawFunc(DrawFunction _func);
+    Error run();
+
+  protected:
+    RenderDevice * m_renderDevice;
+    ImageUniquePtr m_tmpImage;
+    DrawFunction m_drawFunc;
+    SystemClock m_clock;
+    Maybe<SystemClock::TimePoint> m_lastFrameTime;
+};
+
+class STICK_API PaperWindow : public RenderWindow
+{
+  public:
+    PaperWindow();
+    Error open(const WindowSettings & _settings);
+    Document & document();
+    const Document & document() const;
+    tarp::TarpRenderer & paperRenderer();
+    const tarp::TarpRenderer & paperRenderer() const;
+    void drawDocument(RenderPass * _pass);
+    void setAutoResize(bool _b);
+    bool autoResize() const;
+
+  protected:
+    Document m_doc;
+    tarp::TarpRenderer m_paperRenderer;
+    bool m_bAutoResize;
+};
 
 // This mainly houses paper related path utilities that don't really make sense to sit inside paper
 // directly.
