@@ -53,7 +53,7 @@ class STICK_API RenderWindow : public Window
     Error saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
     Error saveFrame(const char * _path);
     RenderDevice & renderDevice() const;
-    void setDrawFunc(DrawFunction _func);
+    void setDrawFunction(DrawFunction _func);
     Error run();
 
   protected:

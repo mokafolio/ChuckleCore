@@ -122,7 +122,7 @@ RenderDevice & RenderWindow::renderDevice() const
     return *m_renderDevice;
 }
 
-void RenderWindow::setDrawFunc(DrawFunction _func)
+void RenderWindow::setDrawFunction(DrawFunction _func)
 {
     m_drawFunc = _func;
 }
