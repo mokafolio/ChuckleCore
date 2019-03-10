@@ -70,9 +70,7 @@ class STICK_API PaperWindow : public RenderWindow
     PaperWindow();
     Error open(const WindowSettings & _settings);
     Document & document();
-    const Document & document() const;
     tarp::TarpRenderer & paperRenderer();
-    const tarp::TarpRenderer & paperRenderer() const;
     void drawDocument(RenderPass * _pass);
     void setAutoResize(bool _b);
     bool autoResize() const;

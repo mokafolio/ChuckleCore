@@ -181,17 +181,7 @@ Document & PaperWindow::document()
     return m_doc;
 }
 
-const Document & PaperWindow::document() const
-{
-    return m_doc;
-}
-
 tarp::TarpRenderer & PaperWindow::paperRenderer()
-{
-    return m_paperRenderer;
-}
-
-const tarp::TarpRenderer & PaperWindow::paperRenderer() const
 {
     return m_paperRenderer;
 }
