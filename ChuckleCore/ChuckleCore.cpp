@@ -75,8 +75,10 @@ Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w)
     return noiseInstance().noise(_x, _y, _z, _w);
 }
 
-RenderWindow::RenderWindow() : m_renderDevice(nullptr)
+RenderWindow::RenderWindow() : m_renderDevice(nullptr), m_fpsIndex(0), m_fpsSMASum(0), m_fpsAvg(0)
 {
+    for (Size i = 0; i < m_fpsBuffer.count(); ++i)
+        m_fpsBuffer[i] = 0.0;
 }
 
 RenderWindow::~RenderWindow()
@@ -143,7 +145,7 @@ Error RenderWindow::run()
     while (!shouldClose())
     {
         auto now = m_clock.now();
-        Float64 dur = m_lastFrameTime ? (now - *m_lastFrameTime).seconds() : 1.0 / 60.0;
+        Float64 dur = m_lastFrameTime ? (now - *m_lastFrameTime).seconds() : 0.0;
         luke::pollEvents();
         m_renderDevice->beginFrame();
         Error err = m_drawFunc(dur);
@@ -152,11 +154,25 @@ Error RenderWindow::run()
         err = m_renderDevice->endFrame();
         if (err)
             return err;
+
+        // update the fps calculation
+        Float64 fps = 1.0 / dur;
+        m_fpsSMASum -= m_fpsBuffer[m_fpsIndex];
+        m_fpsSMASum += fps;
+        if (++m_fpsIndex == m_fpsBuffer.count())
+            m_fpsIndex = 0;
+        m_fpsAvg = m_fpsSMASum / (Float64)m_fpsBuffer.count();
+
         m_lastFrameTime = now;
         Window::swapBuffers();
     }
 
     return Error();
+}
+
+Float64 RenderWindow::fps() const
+{
+    return m_fpsAvg;
 }
 
 PaperWindow::PaperWindow() : m_bAutoResize(true)

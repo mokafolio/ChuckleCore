@@ -12,6 +12,7 @@
 #include <Paper2/Tarp/TarpRenderer.hpp>
 #include <Pic/Image.hpp>
 #include <Stick/SystemClock.hpp>
+#include <Stick/FixedArray.hpp>
 
 namespace chuckle
 {
@@ -55,6 +56,7 @@ class STICK_API RenderWindow : public Window
     RenderDevice & renderDevice() const;
     void setDrawFunction(DrawFunction _func);
     Error run();
+    Float64 fps() const;
 
   protected:
     RenderDevice * m_renderDevice;
@@ -62,6 +64,11 @@ class STICK_API RenderWindow : public Window
     DrawFunction m_drawFunc;
     SystemClock m_clock;
     Maybe<SystemClock::TimePoint> m_lastFrameTime;
+    //helpers to compute FPS (simple moving average)
+    FixedArray<Float64, 100> m_fpsBuffer;
+    Size m_fpsIndex;
+    Float64 m_fpsSMASum;
+    Float64 m_fpsAvg;
 };
 
 class STICK_API PaperWindow : public RenderWindow
