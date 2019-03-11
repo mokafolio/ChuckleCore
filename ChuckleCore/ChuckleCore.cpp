@@ -75,7 +75,12 @@ Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w)
     return noiseInstance().noise(_x, _y, _z, _w);
 }
 
-RenderWindow::RenderWindow() : m_renderDevice(nullptr), m_fpsIndex(0), m_fpsSMASum(0), m_fpsAvg(0)
+RenderWindow::RenderWindow() :
+    m_renderDevice(nullptr),
+    m_fpsIndex(0),
+    m_fpsSMASum(0),
+    m_fpsAvg(0),
+    m_frameCount(0)
 {
     for (Size i = 0; i < m_fpsBuffer.count(); ++i)
         m_fpsBuffer[i] = 0.0;
@@ -164,6 +169,7 @@ Error RenderWindow::run()
             m_fpsIndex = 0;
         m_fpsAvg = m_fpsSMASum / (Float64)m_fpsBuffer.count();
 
+        ++m_frameCount;
         m_lastFrameTime = now;
         Window::swapBuffers();
     }
@@ -174,6 +180,11 @@ Error RenderWindow::run()
 Float64 RenderWindow::fps() const
 {
     return m_fpsAvg;
+}
+
+Size RenderWindow::frameCount() const
+{
+    return m_frameCount;
 }
 
 PaperWindow::PaperWindow() : m_bAutoResize(true)

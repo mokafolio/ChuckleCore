@@ -57,6 +57,7 @@ class STICK_API RenderWindow : public Window
     void setDrawFunction(DrawFunction _func);
     Error run();
     Float64 fps() const;
+    Size frameCount() const;
 
   protected:
     RenderDevice * m_renderDevice;
@@ -69,6 +70,7 @@ class STICK_API RenderWindow : public Window
     Size m_fpsIndex;
     Float64 m_fpsSMASum;
     Float64 m_fpsAvg;
+    Size m_frameCount;
 };
 
 class STICK_API PaperWindow : public RenderWindow
