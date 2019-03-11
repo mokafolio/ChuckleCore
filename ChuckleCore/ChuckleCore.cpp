@@ -79,6 +79,11 @@ RenderWindow::RenderWindow() : m_renderDevice(nullptr)
 {
 }
 
+RenderWindow::~RenderWindow()
+{
+    destroyRenderDevice(m_renderDevice);
+}
+
 Error RenderWindow::open(const WindowSettings & _settings)
 {
     Error ret = Window::open(_settings);
@@ -154,8 +159,7 @@ Error RenderWindow::run()
     return Error();
 }
 
-PaperWindow::PaperWindow() :
-m_bAutoResize(true)
+PaperWindow::PaperWindow() : m_bAutoResize(true)
 {
 }
 

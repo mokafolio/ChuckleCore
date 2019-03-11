@@ -45,7 +45,7 @@ class STICK_API RenderWindow : public Window
     using DrawFunction = std::function<Error(Float64)>;
 
     RenderWindow();
-    virtual ~RenderWindow() = default;
+    virtual ~RenderWindow();
 
     Error open(const WindowSettings & _settings);
     ImageUniquePtr frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
