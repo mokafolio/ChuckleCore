@@ -1,5 +1,7 @@
 project('ChuckleCore', ['cpp'], default_options : ['cpp_std=c++14'])
 
+add_project_arguments('-Wno-missing-braces', '-fno-exceptions', language: 'cpp')
+
 cc = meson.get_compiler('cpp')
 
 stickProj = subproject('Stick')
@@ -16,7 +18,7 @@ deps = [stickProj.get_variable('stickDep'),
         paperProj.get_variable('paperDep'),
         picProj.get_variable('picDep')]
 
-incDirs = include_directories('.')
+incDirs = include_directories('.', 'ChuckleCore/Libs/imgui')
 
 if host_machine.system() == 'linux'
     deps += cc.find_library('dl', required : true)
@@ -31,7 +33,11 @@ if meson.is_subproject() == false
 endif
 
 chuckleCoreSrc = [
-    'ChuckleCore/ChuckleCore.cpp'
+    'ChuckleCore/ChuckleCore.cpp',
+    'ChuckleCore/Libs/imgui/imgui.cpp',
+    'ChuckleCore/Libs/imgui/imgui_demo.cpp',
+    'ChuckleCore/Libs/imgui/imgui_draw.cpp',
+    'ChuckleCore/Libs/imgui/imgui_widgets.cpp'
 ]
 
 chuckleCore = library('ChuckleCore', 
@@ -43,3 +49,7 @@ chuckleCore = library('ChuckleCore',
 chuckleCoreDep = declare_dependency(link_with : chuckleCore, 
     dependencies: deps, 
     include_directories: incDirs)
+
+if get_option('buildExamples') == true
+    subdir('Examples')
+endif

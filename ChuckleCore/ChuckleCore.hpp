@@ -11,8 +11,10 @@
 #include <Paper2/Symbol.hpp>
 #include <Paper2/Tarp/TarpRenderer.hpp>
 #include <Pic/Image.hpp>
-#include <Stick/SystemClock.hpp>
 #include <Stick/FixedArray.hpp>
+#include <Stick/SystemClock.hpp>
+
+#include "imgui.h"
 
 namespace chuckle
 {
@@ -40,6 +42,39 @@ STICK_API Float32 noise(Float32 _x, Float32 _y);
 STICK_API Float32 noise(Float32 _x, Float32 _y, Float32 _z);
 STICK_API Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w);
 
+class STICK_API ImGuiInterface : public stick::EventForwarder
+{
+  public:
+    ImGuiInterface();
+    ~ImGuiInterface();
+    Error init(RenderDevice & _renderDevice,
+               Window & _window,
+               const char * _fontURI,
+               Float32 _fontSize);
+    Error newFrame(Float64 _deltaTime);
+    Error drawData(ImDrawData * _drawData);
+
+  private:
+    // the window that the ui is drawn to and dispatches the events to the UI
+    Window * m_window;
+    // all rendering primitives to render the imgui ui
+    RenderDevice * m_renderDevice;
+    Program * m_program;
+    Pipeline * m_pipeline;
+    PipelineVariable * m_projPVar;
+    PipelineTexture * m_pipeTex;
+    VertexBuffer * m_vertexBuffer;
+    IndexBuffer * m_indexBuffer;
+    Mesh * m_mesh;
+    Texture * m_texture;
+    Sampler * m_sampler;
+    // some other helpers
+    UInt64 m_time;
+    bool m_bMousePressed[3];
+    DynamicArray<ImDrawVert> m_vertexDrawData;
+    DynamicArray<ImDrawIdx> m_indexDrawData;
+};
+
 class STICK_API RenderWindow : public Window
 {
   public:
@@ -65,7 +100,11 @@ class STICK_API RenderWindow : public Window
     DrawFunction m_drawFunc;
     SystemClock m_clock;
     Maybe<SystemClock::TimePoint> m_lastFrameTime;
-    //helpers to compute FPS (simple moving average)
+
+    //imgui stuffs
+    ImGuiInterface m_gui;
+
+    // helpers to compute FPS (simple moving average)
     FixedArray<Float64, 100> m_fpsBuffer;
     Size m_fpsIndex;
     Float64 m_fpsSMASum;
@@ -85,6 +124,9 @@ class STICK_API PaperWindow : public RenderWindow
     bool autoResize() const;
 
   protected:
+
+    void updateDocumentSize();
+
     Document m_doc;
     tarp::TarpRenderer m_paperRenderer;
     bool m_bAutoResize;

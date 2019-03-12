@@ -75,6 +75,408 @@ Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w)
     return noiseInstance().noise(_x, _y, _z, _w);
 }
 
+struct CursorMap
+{
+    CursorMap()
+    {
+        cursorMapping[ImGuiMouseCursor_Arrow] = CursorType::Cursor;
+        cursorMapping[ImGuiMouseCursor_TextInput] = CursorType::TextInput;
+        cursorMapping[ImGuiMouseCursor_ResizeAll] = CursorType::ResizeAll;
+        cursorMapping[ImGuiMouseCursor_ResizeNS] = CursorType::ResizeNS;
+        cursorMapping[ImGuiMouseCursor_ResizeEW] = CursorType::ResizeEW;
+        cursorMapping[ImGuiMouseCursor_ResizeNESW] = CursorType::ResizeNESW;
+        cursorMapping[ImGuiMouseCursor_ResizeNWSE] = CursorType::ResizeNWSE;
+    }
+
+    FixedArray<CursorType, 7> cursorMapping;
+};
+
+static const FixedArray<CursorType, 7> & cursorMapping()
+{
+    static CursorMap s_map;
+    return s_map.cursorMapping;
+}
+
+static const char * ImGui_GetClipboardText(void *)
+{
+    return luke::clipboardText();
+}
+
+static void ImGui_SetClipboardText(void *, const char * _text)
+{
+    luke::setClipboardText(_text);
+}
+
+static void updateModifiers(ImGuiIO & _io)
+{
+    _io.KeyShift = luke::modifier(luke::KeyModifier::Shift);
+    _io.KeyCtrl = luke::modifier(luke::KeyModifier::Control);
+    _io.KeyAlt = luke::modifier(luke::KeyModifier::Alt);
+    _io.KeySuper = luke::modifier(luke::KeyModifier::Command);
+}
+
+ImGuiInterface::ImGuiInterface() :
+    m_renderDevice(nullptr),
+    m_time(0),
+    m_bMousePressed{ false, false, false }
+{
+}
+
+ImGuiInterface::~ImGuiInterface()
+{
+    if (m_renderDevice)
+    {
+        //@TODO:Cleanup
+
+        ImGui::DestroyContext();
+    }
+}
+
+Error ImGuiInterface::init(RenderDevice & _renderDevice,
+                           Window & _window,
+                           const char * _fontURI,
+                           Float32 _fontSize)
+{
+    ImGui::CreateContext();
+    m_renderDevice = &_renderDevice;
+    m_window = &_window;
+
+    // Setup back-end capabilities flags
+    ImGuiIO & io = ImGui::GetIO();
+    io.BackendFlags |=
+        ImGuiBackendFlags_HasMouseCursors; // We can honor GetMouseCursor() values (optional)
+
+    // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array.
+    io.KeyMap[ImGuiKey_Tab] = (int)KeyCode::Tab;
+    io.KeyMap[ImGuiKey_LeftArrow] = (int)KeyCode::Left;
+    io.KeyMap[ImGuiKey_RightArrow] = (int)KeyCode::Right;
+    io.KeyMap[ImGuiKey_UpArrow] = (int)KeyCode::Up;
+    io.KeyMap[ImGuiKey_DownArrow] = (int)KeyCode::Down;
+    io.KeyMap[ImGuiKey_PageUp] = (int)KeyCode::PageUp;
+    io.KeyMap[ImGuiKey_PageDown] = (int)KeyCode::PageDown;
+    io.KeyMap[ImGuiKey_Home] = (int)KeyCode::Home;
+    io.KeyMap[ImGuiKey_End] = (int)KeyCode::End;
+    io.KeyMap[ImGuiKey_Insert] = (int)KeyCode::Insert;
+    io.KeyMap[ImGuiKey_Delete] = (int)KeyCode::Delete;
+    io.KeyMap[ImGuiKey_Backspace] = (int)KeyCode::Backspace;
+    io.KeyMap[ImGuiKey_Space] = (int)KeyCode::Space;
+    io.KeyMap[ImGuiKey_Enter] = (int)KeyCode::Return;
+    io.KeyMap[ImGuiKey_Escape] = (int)KeyCode::Escape;
+    io.KeyMap[ImGuiKey_A] = (int)KeyCode::A;
+    io.KeyMap[ImGuiKey_C] = (int)KeyCode::C;
+    io.KeyMap[ImGuiKey_V] = (int)KeyCode::V;
+    io.KeyMap[ImGuiKey_X] = (int)KeyCode::X;
+    io.KeyMap[ImGuiKey_Y] = (int)KeyCode::Y;
+    io.KeyMap[ImGuiKey_Z] = (int)KeyCode::Z;
+
+    io.SetClipboardTextFn = ImGui_SetClipboardText;
+    io.GetClipboardTextFn = ImGui_GetClipboardText;
+    io.ClipboardUserData = NULL;
+
+    // ImGui::GetStyle().ScaleAllSizes(2.0);
+
+    io.Fonts->Clear();
+    io.Fonts->AddFontFromFileTTF("../../Assets/RobotoMono-Regular.ttf",
+                                 14 * _window.backingScaleFactor());
+
+    // ImFontConfig cfg;
+    // cfg.SizePixels = 32.0;
+    // io.Fonts->AddFontDefault(&cfg);
+
+    // subscribe to all events dispatched from the window
+    _window.addForwarder(*this);
+
+    // grab the events that imgui is interested in
+    _window.addEventCallback([&io](const luke::KeyDownEvent & _evt) {
+        if ((UInt32)_evt.key() < IM_ARRAYSIZE(io.KeysDown))
+            io.KeysDown[(UInt32)_evt.key()] = true;
+
+        updateModifiers(io);
+    });
+
+    _window.addEventCallback([&io](const luke::KeyUpEvent & _evt) {
+        if ((UInt32)_evt.key() < IM_ARRAYSIZE(io.KeysDown))
+            io.KeysDown[(UInt32)_evt.key()] = false;
+
+        updateModifiers(io);
+    });
+
+    _window.addEventCallback([&io](const luke::MouseScrollEvent & _evt) {
+        if (_evt.scrollX() > 0)
+            io.MouseWheelH += 0.75;
+        if (_evt.scrollX() < 0)
+            io.MouseWheelH -= 0.75;
+        if (_evt.scrollY() > 0)
+            io.MouseWheel += 0.75;
+        if (_evt.scrollY() < 0)
+            io.MouseWheel -= 0.75;
+    });
+
+    _window.addEventCallback([&io](const luke::TextInputEvent & _evt) {
+        if (io.WantTextInput)
+        {
+            io.AddInputCharactersUTF8(_evt.text().cString());
+            // prevent this event from being passed on to anything else
+            _evt.stopPropagation();
+        }
+    });
+
+    // and prevent all mouse/keyboard events to propagate to forwarders down the chain
+    // if imgui is capturing them.
+    addEventCategoryFilter<MouseEventCategory>(
+        [&io](const stick::Event & _evt) { return io.WantCaptureMouse; }, true);
+
+    addEventCategoryFilter<KeyEventCategory>(
+        [&io](const stick::Event & _evt) { return io.WantCaptureKeyboard; }, true);
+
+    const char * vertex_shader =
+        "#version 410 core \n"
+        "layout(std140) uniform View\n"
+        "{\n"
+        "mat4 projection;\n"
+        "};\n"
+        "layout(location = 0) in vec2 vertex;\n"
+        "layout(location = 1) in vec2 tc;\n"
+        "layout(location = 2) in vec4 color;\n"
+        "out vec2 fragTC;\n"
+        "out vec4 fragCol;\n"
+        "void main()\n"
+        "{\n"
+        "   fragTC = tc;\n"
+        "   fragCol = color / 255.0;\n"
+        "   gl_Position = projection * vec4(vertex, 0, 1);\n"
+        "}\n";
+
+    const char * fragment_shader =
+        "#version 410 core \n"
+        "uniform sampler2D tex;\n"
+        "in vec2 fragTC;\n"
+        "in vec4 fragCol;\n"
+        "out vec4 outCol;\n"
+        "void main()\n"
+        "{\n"
+        "   outCol = fragCol * texture(tex, fragTC);\n"
+        "}\n";
+
+    auto result = m_renderDevice->createProgram(vertex_shader, fragment_shader);
+    if (!result)
+        return result.error();
+
+    m_program = result.get();
+
+    PipelineSettings ps;
+    ps.multisample = true;
+    ps.blendSettings = BlendSettings(); // enable default blending
+    ps.program = m_program;
+    if (auto res = m_renderDevice->createPipeline(ps))
+        m_pipeline = res.get();
+    else
+        return res.error();
+
+    m_projPVar = m_pipeline->variable("projection");
+    m_pipeTex = m_pipeline->texture("tex");
+
+    // Build texture atlas
+    unsigned char * pixels;
+    int width, height;
+    // io.Fonts->Clear();
+    // if(_fontURI)
+    //     io.Fonts->AddFontFromFileTTF(_fontURI, _fontSize);
+    io.Fonts->GetTexDataAsRGBA32(
+        &pixels, &width, &height); // Load as RGBA 32-bits for OpenGL3 demo because it is more
+                                   // likely to be compatible with user's existing shader.
+
+    printf("TEX %i %i %p\n", width, height, pixels);
+    if (auto res = m_renderDevice->createTexture())
+        m_texture = res.get();
+    else
+        return res.error();
+
+    if (auto res = m_renderDevice->createSampler())
+        m_sampler = res.get();
+    else
+        return res.error();
+
+    m_texture->loadPixels(width, height, 1, pixels, DataType::UInt8, TextureFormat::RGBA8);
+    m_pipeTex->set(m_texture, m_sampler);
+
+    // Store our identifier
+    io.Fonts->TexID = (void *)(intptr_t)m_texture;
+
+    //@TODO Proper usage hints once Dab supports that
+    if (auto res = m_renderDevice->createVertexBuffer())
+        m_vertexBuffer = res.get();
+    else
+        return res.error();
+
+    if (auto res = m_renderDevice->createIndexBuffer())
+        m_indexBuffer = res.get();
+    else
+        return res.error();
+
+    VertexLayout layout({
+        { DataType::Float32, 2 }, // vertex
+        { DataType::Float32, 2 }, // tc
+        { DataType::UInt8, 4 }    // color
+    });
+
+    if (auto res = m_renderDevice->createMesh(&m_vertexBuffer, &layout, 1, m_indexBuffer))
+        m_mesh = res.get();
+    else
+        return res.error();
+
+    return Error();
+}
+
+Error ImGuiInterface::newFrame(Float64 _deltaTime)
+{
+    ImGuiIO & io = ImGui::GetIO();
+
+    // Setup display size (every frame to accommodate for window resizing)
+    int w = m_window->width();
+    int h = m_window->height();
+    int display_w = m_window->widthInPixels();
+    int display_h = m_window->heightInPixels();
+
+    io.DisplaySize = ImVec2((float)w, (float)h);
+    io.DisplayFramebufferScale =
+        ImVec2(w > 0 ? ((float)display_w / w) : 0, h > 0 ? ((float)display_h / h) : 0);
+    io.FontGlobalScale = 1.0 / std::max(io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
+    io.DeltaTime = _deltaTime;
+
+    MouseState ms = luke::mouseState();
+    io.MousePos = ImVec2(ms.x(), ms.y());
+
+    io.MouseDown[0] = ms.isButtonDown(MouseButton::Left);
+    io.MouseDown[1] = ms.isButtonDown(MouseButton::Right);
+    io.MouseDown[2] = ms.isButtonDown(MouseButton::Middle);
+
+    // Update OS/hardware mouse cursor if imgui isn't drawing a software cursor
+    if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) == 0)
+    {
+        ImGuiMouseCursor cursor = ImGui::GetMouseCursor();
+        if (io.MouseDrawCursor || cursor == ImGuiMouseCursor_None)
+        {
+            m_window->hideCursor();
+        }
+        else
+        {
+            m_window->setCursor(cursorMapping()[cursor]);
+            m_window->showCursor();
+        }
+    }
+
+    // Start the frame. This call will update the io.WantCaptureMouse, io.WantCaptureKeyboard flag
+    // that you can use to dispatch inputs (or not) to your application.
+    ImGui::NewFrame();
+
+    return Error();
+}
+
+Error ImGuiInterface::drawData(ImDrawData * _drawData)
+{
+    // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates !=
+    // framebuffer coordinates)
+    ImGuiIO & io = ImGui::GetIO();
+    int fb_width = (int)(io.DisplaySize.x * io.DisplayFramebufferScale.x);
+    int fb_height = (int)(io.DisplaySize.y * io.DisplayFramebufferScale.y);
+    if (fb_width == 0 || fb_height == 0)
+        return Error();
+
+    printf("asfhj %f %f %f %f\n",
+           io.DisplaySize.x,
+           io.DisplaySize.y,
+           io.DisplayFramebufferScale.x,
+           io.DisplayFramebufferScale.y);
+
+    _drawData->ScaleClipRects(io.DisplayFramebufferScale);
+
+    // Setup viewport, orthographic projection matrix
+    // glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
+    float ortho_projection[4][4] = {
+        { 2.0f / io.DisplaySize.x, 0.0f, 0.0f, 0.0f },
+        { 0.0f, 2.0f / -io.DisplaySize.y, 0.0f, 0.0f },
+        { 0.0f, 0.0f, -1.0f, 0.0f },
+        { -1.0f, 1.0f, 0.0f, 1.0f },
+    };
+    m_projPVar->setMat4f(&ortho_projection[0][0]);
+
+    printf("drawData\n");
+
+    RenderPass * pass = m_renderDevice->beginPass();
+    pass->setViewport(0, 0, fb_width, fb_height);
+    printf("DA COUNTS %i\n", _drawData->CmdListsCount);
+    m_vertexDrawData.clear();
+    m_indexDrawData.clear();
+    for (int n = 0; n < _drawData->CmdListsCount; n++)
+    {
+        const ImDrawList * cmd_list = _drawData->CmdLists[n];
+        m_vertexDrawData.append(cmd_list->VtxBuffer.Data,
+                                cmd_list->VtxBuffer.Data + cmd_list->VtxBuffer.Size);
+        m_indexDrawData.append(cmd_list->IdxBuffer.Data,
+                               cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size);
+    }
+
+    m_vertexBuffer->loadDataRaw((void *)m_vertexDrawData.ptr(),
+                                m_vertexDrawData.count() * sizeof(ImDrawVert));
+    m_indexBuffer->loadDataRaw((void *)m_indexDrawData.ptr(),
+                               m_indexDrawData.count() * sizeof(ImDrawIdx));
+
+    Size vtxOffset = 0;
+    Size idxOffset = 0;
+    for (int n = 0; n < _drawData->CmdListsCount; n++)
+    {
+        const ImDrawList * cmd_list = _drawData->CmdLists[n];
+
+        for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+        {
+            const ImDrawCmd * pcmd = &cmd_list->CmdBuffer[cmd_i];
+            if (pcmd->UserCallback)
+            {
+                pcmd->UserCallback(cmd_list, pcmd);
+            }
+            else
+            {
+                // RenderState state;
+                // state.setGlobalMat4f("projection", Mat4f(&ortho_projection[0][0]));
+                // state.setProgram(m_program);
+                // state.setBlending(true);
+                // state.setScissor((int)pcmd->ClipRect.x,
+                //                  (int)(fb_height - pcmd->ClipRect.w),
+                //                  (int)(pcmd->ClipRect.z - pcmd->ClipRect.x),
+                //                  (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
+
+                // state.setTexture("Texture", (TextureHandle)(Size)(intptr_t)pcmd->TextureId);
+
+                // STICK_ASSERT(sizeof(ImDrawIdx) == 4);
+                // Error err = m_renderer->drawMesh(
+                //     m_mesh, VertexDrawMode::Triangles, idx_buffer_offset, pcmd->ElemCount,
+                //     state);
+                // if (err)
+                //     return err;
+
+                STICK_ASSERT(sizeof(ImDrawIdx) == 4);
+                m_pipeTex->set((Texture *)(intptr_t)pcmd->TextureId, m_sampler);
+                pass->setScissor((int)pcmd->ClipRect.x,
+                                 (int)(fb_height - pcmd->ClipRect.w),
+                                 (int)(pcmd->ClipRect.z - pcmd->ClipRect.x),
+                                 (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
+                pass->drawMesh(m_mesh,
+                               m_pipeline,
+                               idxOffset,
+                               pcmd->ElemCount,
+                               vtxOffset,
+                               VertexDrawMode::Triangles);
+            }
+            idxOffset += pcmd->ElemCount;
+        }
+        vtxOffset += cmd_list->VtxBuffer.Size;
+    }
+    m_renderDevice->endPass(pass);
+
+    return Error();
+}
+
 RenderWindow::RenderWindow() :
     m_renderDevice(nullptr),
     m_fpsIndex(0),
@@ -101,7 +503,8 @@ Error RenderWindow::open(const WindowSettings & _settings)
         return res.error();
     m_renderDevice = res.get();
     m_tmpImage = makeUnique<ImageRGBA8>(widthInPixels(), heightInPixels());
-    return Error();
+
+    return m_gui.init(*m_renderDevice, *this, NULL, 32);
 }
 
 ImageUniquePtr RenderWindow::frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h)
@@ -153,9 +556,23 @@ Error RenderWindow::run()
         Float64 dur = m_lastFrameTime ? (now - *m_lastFrameTime).seconds() : 1.0 / 60.0;
         luke::pollEvents();
         m_renderDevice->beginFrame();
-        Error err = m_drawFunc(dur);
+        Error err = m_gui.newFrame(dur);
         if (err)
             return err;
+
+        err = m_drawFunc(dur);
+        if (err)
+            return err;
+
+        // ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
+        ImGui::ShowDemoWindow();
+
+        ImGui::Render();
+        err = m_gui.drawData(ImGui::GetDrawData());
+
+        if (err)
+            return err;
+
         err = m_renderDevice->endFrame();
         if (err)
             return err;
@@ -193,19 +610,28 @@ PaperWindow::PaperWindow() : m_bAutoResize(true)
 
 Error PaperWindow::open(const WindowSettings & _settings)
 {
-    this->addEventCallback([this](const WindowResizeEvent & _evt) {
-        if (this->m_bAutoResize)
-        {
-            this->m_doc.setSize(_evt.width(), _evt.height());
-            this->m_paperRenderer.setViewport(0, 0, this->widthInPixels(), this->heightInPixels());
-        }
-    });
+    this->addEventCallback([this](const WindowResizeEvent & _evt) { this->updateDocumentSize(); });
 
     Error err = RenderWindow::open(_settings);
     if (err)
         return err;
 
-    return m_paperRenderer.init(m_doc);
+    err = m_paperRenderer.init(m_doc);
+    if (err)
+        return err;
+
+    updateDocumentSize();
+    return Error();
+}
+
+void PaperWindow::updateDocumentSize()
+{
+    if (m_bAutoResize)
+    {
+        m_doc.setSize(width(), height());
+        m_paperRenderer.setViewport(0, 0, widthInPixels(), heightInPixels());
+        m_paperRenderer.setProjection(Mat4f::ortho(0, width(), height(), 0, -1, 1));
+    }
 }
 
 Document & PaperWindow::document()
