@@ -602,11 +602,11 @@ PaperWindow::PaperWindow() : m_bAutoResize(true)
 {
 }
 
-Error PaperWindow::open(const WindowSettings & _settings)
+Error PaperWindow::open(const WindowSettings & _settings, const char * _uiFontURI, Float32 _uiFontSize)
 {
     this->addEventCallback([this](const WindowResizeEvent & _evt) { this->updateDocumentSize(); });
 
-    Error err = RenderWindow::open(_settings);
+    Error err = RenderWindow::open(_settings, _uiFontURI, _uiFontSize);
     if (err)
         return err;
 

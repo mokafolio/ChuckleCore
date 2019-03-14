@@ -116,7 +116,7 @@ class STICK_API PaperWindow : public RenderWindow
 {
   public:
     PaperWindow();
-    Error open(const WindowSettings & _settings);
+    Error open(const WindowSettings & _settings, const char * _uiFontURI = NULL, Float32 _uiFontSize = 14.0f);
     Document & document();
     tarp::TarpRenderer & paperRenderer();
     void drawDocument(RenderPass * _pass);
