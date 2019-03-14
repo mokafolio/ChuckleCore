@@ -536,6 +536,16 @@ void RenderWindow::setShowWindowMetrics(bool _b)
     m_bShowWindowMetrics = _b;
 }
 
+void RenderWindow::toggleShowWindowMetrics()
+{
+    m_bShowWindowMetrics = !m_bShowWindowMetrics;
+}
+
+bool RenderWindow::isShowingWindowMetrics() const
+{
+    return m_bShowWindowMetrics;
+}
+
 ImageUniquePtr RenderWindow::frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h)
 {
     ImageUniquePtr img = makeUnique<ImageRGBA8>(_w, _h);

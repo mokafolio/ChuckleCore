@@ -89,6 +89,7 @@ class STICK_API RenderWindow : public Window
     Error open(const WindowSettings & _settings);
     Error enableDefaultUI(const char * _uiFontURI = NULL, Float32 _uiFontSize = 14.0f);
     void setShowWindowMetrics(bool _b);
+    void toggleShowWindowMetrics();
     ImageUniquePtr frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
     ImageUniquePtr frameImage();
     Error saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
@@ -98,7 +99,8 @@ class STICK_API RenderWindow : public Window
     Error run();
     Float64 fps() const;
     Size frameCount() const;
-
+    bool isShowingWindowMetrics() const;
+    
   protected:
     RenderDevice * m_renderDevice;
     ImageUniquePtr m_tmpImage;
