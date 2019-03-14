@@ -83,7 +83,7 @@ class STICK_API RenderWindow : public Window
     RenderWindow();
     virtual ~RenderWindow();
 
-    Error open(const WindowSettings & _settings, const char * _uiFontURI = NULL, Float32 _uiFontSize = -1.0f);
+    Error open(const WindowSettings & _settings, const char * _uiFontURI = NULL, Float32 _uiFontSize = 14.0f);
     ImageUniquePtr frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
     ImageUniquePtr frameImage();
     Error saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
