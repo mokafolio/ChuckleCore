@@ -495,6 +495,7 @@ Error ImGuiInterface::finalizeFrame()
 
 RenderWindow::RenderWindow() :
     m_renderDevice(nullptr),
+    m_bShowWindowMetrics(false),
     m_fpsIndex(0),
     m_fpsSMASum(0),
     m_fpsAvg(0),
@@ -528,6 +529,11 @@ Error RenderWindow::enableDefaultUI(const char * _uiFontURI, Float32 _uiFontSize
     STICK_ASSERT(!m_gui);
     m_gui = makeUnique<ImGuiInterface>();
     return m_gui->init(*m_renderDevice, *this, _uiFontURI, _uiFontSize);
+}
+
+void RenderWindow::setShowWindowMetrics(bool _b)
+{
+    m_bShowWindowMetrics = _b;
 }
 
 ImageUniquePtr RenderWindow::frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h)
@@ -593,6 +599,57 @@ Error RenderWindow::run()
 
         if (m_gui)
         {
+            if (m_bShowWindowMetrics)
+            {
+                // based on imgui simple overlay sample. What else should be in here?
+                const Float32 dist = 10.0f * backingScaleFactor();
+                static int corner = 0;
+                ImGuiIO & io = ImGui::GetIO();
+                if (corner != -1)
+                {
+                    ImVec2 window_pos =
+                        ImVec2((corner & 1) ? io.DisplaySize.x - dist : dist,
+                               (corner & 2) ? io.DisplaySize.y - dist : dist);
+                    ImVec2 window_pos_pivot =
+                        ImVec2((corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f);
+                    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+                }
+                ImGui::SetNextWindowBgAlpha(0.3f); // Transparent background
+                if (ImGui::Begin("Window Metrics",
+                                 &m_bShowWindowMetrics,
+                                 (corner != -1 ? ImGuiWindowFlags_NoMove : 0) |
+                                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                     ImGuiWindowFlags_AlwaysAutoResize |
+                                     ImGuiWindowFlags_NoSavedSettings |
+                                     ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
+                {
+                    ImGui::Text("FPS: %.2f\n", fps());
+                    ImGui::Separator();
+                    if (ImGui::IsMousePosValid())
+                        ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
+                    else
+                        ImGui::Text("Mouse Position: <invalid>");
+
+                    if (ImGui::BeginPopupContextWindow())
+                    {
+                        if (ImGui::MenuItem("Custom", NULL, corner == -1))
+                            corner = -1;
+                        if (ImGui::MenuItem("Top-left", NULL, corner == 0))
+                            corner = 0;
+                        if (ImGui::MenuItem("Top-right", NULL, corner == 1))
+                            corner = 1;
+                        if (ImGui::MenuItem("Bottom-left", NULL, corner == 2))
+                            corner = 2;
+                        if (ImGui::MenuItem("Bottom-right", NULL, corner == 3))
+                            corner = 3;
+                        if (m_bShowWindowMetrics && ImGui::MenuItem("Close"))
+                            m_bShowWindowMetrics = false;
+                        ImGui::EndPopup();
+                    }
+                }
+                ImGui::End();
+            }
+
             err = m_gui->finalizeFrame();
             if (err)
                 return err;

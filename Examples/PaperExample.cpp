@@ -14,7 +14,8 @@ int main(int _argc, const char * _args[])
     PaperWindow window;
     RETURN_ON_ERR(window.open(WindowSettings()));
     window.setVerticalSync(true);
-
+    RETURN_ON_ERR(window.enableDefaultUI());
+    
     Document & doc = window.document();
 
     Path * circle = doc.createCircle(Vec2f(window.width() * 0.5, window.height() * 0.5), 100);

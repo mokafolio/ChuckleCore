@@ -88,6 +88,7 @@ class STICK_API RenderWindow : public Window
 
     Error open(const WindowSettings & _settings);
     Error enableDefaultUI(const char * _uiFontURI = NULL, Float32 _uiFontSize = 14.0f);
+    void setShowWindowMetrics(bool _b);
     ImageUniquePtr frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
     ImageUniquePtr frameImage();
     Error saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
@@ -107,6 +108,7 @@ class STICK_API RenderWindow : public Window
 
     //imgui stuffs
     stick::UniquePtr<ImGuiInterface> m_gui;
+    bool m_bShowWindowMetrics;
 
     // helpers to compute FPS (simple moving average)
     FixedArray<Float64, 100> m_fpsBuffer;
