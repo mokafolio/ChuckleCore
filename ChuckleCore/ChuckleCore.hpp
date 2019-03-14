@@ -42,6 +42,9 @@ STICK_API Float32 noise(Float32 _x, Float32 _y);
 STICK_API Float32 noise(Float32 _x, Float32 _y, Float32 _z);
 STICK_API Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w);
 
+STICK_API String executablePath(Allocator & _alloc = defaultAllocator());
+STICK_API String executableDirectoryName(Allocator & _alloc = defaultAllocator());
+
 class STICK_API ImGuiInterface : public stick::EventForwarder
 {
   public:

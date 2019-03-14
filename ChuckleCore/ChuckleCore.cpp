@@ -1,4 +1,5 @@
 #include <ChuckleCore/ChuckleCore.hpp>
+#include <whereami.h>
 
 namespace chuckle
 {
@@ -73,6 +74,25 @@ Float32 noise(Float32 _x, Float32 _y, Float32 _z)
 Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w)
 {
     return noiseInstance().noise(_x, _y, _z, _w);
+}
+
+String executablePath(Allocator & _alloc)
+{
+    int length = wai_getExecutablePath(NULL, 0, NULL);
+    String ret(length, _alloc);
+    // ret.resize(length);
+    wai_getExecutablePath((char *)ret.ptr(), length, NULL);
+    return ret;
+}
+
+String executableDirectoryName(Allocator & _alloc)
+{
+    int length = wai_getExecutablePath(NULL, 0, NULL);
+    int dirPathLen;
+    String ret(length, _alloc);
+    wai_getExecutablePath((char *)ret.ptr(), length, &dirPathLen);
+
+    return ret;
 }
 
 struct CursorMap
@@ -178,8 +198,7 @@ Error ImGuiInterface::init(RenderDevice & _renderDevice,
     if (_fontURI)
     {
         io.Fonts->Clear();
-        io.Fonts->AddFontFromFileTTF(_fontURI,
-                                     _fontSize * _window.backingScaleFactor());
+        io.Fonts->AddFontFromFileTTF(_fontURI, _fontSize * _window.backingScaleFactor());
     }
 
     // ImFontConfig cfg;
@@ -487,7 +506,9 @@ RenderWindow::~RenderWindow()
     destroyRenderDevice(m_renderDevice);
 }
 
-Error RenderWindow::open(const WindowSettings & _settings, const char * _uiFontURI, Float32 _uiFontSize)
+Error RenderWindow::open(const WindowSettings & _settings,
+                         const char * _uiFontURI,
+                         Float32 _uiFontSize)
 {
     Error ret = Window::open(_settings);
     if (ret)
@@ -602,7 +623,9 @@ PaperWindow::PaperWindow() : m_bAutoResize(true)
 {
 }
 
-Error PaperWindow::open(const WindowSettings & _settings, const char * _uiFontURI, Float32 _uiFontSize)
+Error PaperWindow::open(const WindowSettings & _settings,
+                        const char * _uiFontURI,
+                        Float32 _uiFontSize)
 {
     this->addEventCallback([this](const WindowResizeEvent & _evt) { this->updateDocumentSize(); });
 

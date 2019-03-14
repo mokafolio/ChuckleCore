@@ -1,4 +1,4 @@
-project('ChuckleCore', ['cpp'], default_options : ['cpp_std=c++14'])
+project('ChuckleCore', ['cpp', 'c'], default_options : ['cpp_std=c++14'])
 
 add_project_arguments('-Wno-missing-braces', '-fno-exceptions', language: 'cpp')
 
@@ -18,7 +18,7 @@ deps = [stickProj.get_variable('stickDep'),
         paperProj.get_variable('paperDep'),
         picProj.get_variable('picDep')]
 
-incDirs = include_directories('.', 'ChuckleCore/Libs/imgui')
+incDirs = include_directories('.', 'ChuckleCore/Libs/imgui', 'ChuckleCore/Libs/whereami')
 
 if host_machine.system() == 'linux'
     deps += cc.find_library('dl', required : true)
@@ -37,7 +37,8 @@ chuckleCoreSrc = [
     'ChuckleCore/Libs/imgui/imgui.cpp',
     'ChuckleCore/Libs/imgui/imgui_demo.cpp',
     'ChuckleCore/Libs/imgui/imgui_draw.cpp',
-    'ChuckleCore/Libs/imgui/imgui_widgets.cpp'
+    'ChuckleCore/Libs/imgui/imgui_widgets.cpp',
+    'ChuckleCore/Libs/whereami/whereami.c'
 ]
 
 chuckleCore = library('ChuckleCore', 
