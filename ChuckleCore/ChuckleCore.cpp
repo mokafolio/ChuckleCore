@@ -175,9 +175,12 @@ Error ImGuiInterface::init(RenderDevice & _renderDevice,
 
     // ImGui::GetStyle().ScaleAllSizes(2.0);
 
-    io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF("../../Assets/RobotoMono-Regular.ttf",
-                                 14 * _window.backingScaleFactor());
+    if (_fontURI)
+    {
+        io.Fonts->Clear();
+        io.Fonts->AddFontFromFileTTF(_fontURI,
+                                     _fontSize * _window.backingScaleFactor());
+    }
 
     // ImFontConfig cfg;
     // cfg.SizePixels = 32.0;
@@ -493,7 +496,7 @@ RenderWindow::~RenderWindow()
     destroyRenderDevice(m_renderDevice);
 }
 
-Error RenderWindow::open(const WindowSettings & _settings)
+Error RenderWindow::open(const WindowSettings & _settings, const char * _uiFontURI, Float32 _uiFontSize)
 {
     Error ret = Window::open(_settings);
     if (ret)
@@ -504,7 +507,7 @@ Error RenderWindow::open(const WindowSettings & _settings)
     m_renderDevice = res.get();
     m_tmpImage = makeUnique<ImageRGBA8>(widthInPixels(), heightInPixels());
 
-    return m_gui.init(*m_renderDevice, *this, NULL, 32);
+    return m_gui.init(*m_renderDevice, *this, _uiFontURI, _uiFontSize);
 }
 
 ImageUniquePtr RenderWindow::frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h)

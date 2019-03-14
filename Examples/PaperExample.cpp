@@ -13,6 +13,7 @@ int main(int _argc, const char * _args[])
 {
     PaperWindow window;
     RETURN_ON_ERR(window.open(WindowSettings()));
+    window.setVerticalSync(true);
 
     Document & doc = window.document();
 
