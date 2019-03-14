@@ -533,12 +533,13 @@ Error RenderWindow::enableDefaultUI(const char * _uiFontURI, Float32 _uiFontSize
 
 void RenderWindow::setShowWindowMetrics(bool _b)
 {
+    STICK_ASSERT(m_gui);
     m_bShowWindowMetrics = _b;
 }
 
 void RenderWindow::toggleShowWindowMetrics()
 {
-    m_bShowWindowMetrics = !m_bShowWindowMetrics;
+    setShowWindowMetrics(!m_bShowWindowMetrics);
 }
 
 bool RenderWindow::isShowingWindowMetrics() const
