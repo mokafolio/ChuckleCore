@@ -289,7 +289,6 @@ Error ImGuiInterface::init(RenderDevice & _renderDevice,
         &pixels, &width, &height); // Load as RGBA 32-bits for OpenGL3 demo because it is more
                                    // likely to be compatible with user's existing shader.
 
-    printf("TEX %i %i %p\n", width, height, pixels);
     if (auto res = m_renderDevice->createTexture())
         m_texture = res.get();
     else
@@ -386,12 +385,6 @@ Error ImGuiInterface::drawData(ImDrawData * _drawData)
     if (fb_width == 0 || fb_height == 0)
         return Error();
 
-    printf("asfhj %f %f %f %f\n",
-           io.DisplaySize.x,
-           io.DisplaySize.y,
-           io.DisplayFramebufferScale.x,
-           io.DisplayFramebufferScale.y);
-
     _drawData->ScaleClipRects(io.DisplayFramebufferScale);
 
     // Setup viewport, orthographic projection matrix
@@ -404,11 +397,9 @@ Error ImGuiInterface::drawData(ImDrawData * _drawData)
     };
     m_projPVar->setMat4f(&ortho_projection[0][0]);
 
-    printf("drawData\n");
-
     RenderPass * pass = m_renderDevice->beginPass();
     pass->setViewport(0, 0, fb_width, fb_height);
-    printf("DA COUNTS %i\n", _drawData->CmdListsCount);
+
     m_vertexDrawData.clear();
     m_indexDrawData.clear();
     for (int n = 0; n < _drawData->CmdListsCount; n++)
