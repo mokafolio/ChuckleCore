@@ -394,8 +394,11 @@ Error ImGuiInterface::newFrame(Float64 _deltaTime)
     return Error();
 }
 
-Error ImGuiInterface::drawData(ImDrawData * _drawData)
+Error ImGuiInterface::finalizeFrame()
 {
+    ImGui::Render();
+    ImDrawData * drawData = ImGui::GetDrawData();
+
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates !=
     // framebuffer coordinates)
     ImGuiIO & io = ImGui::GetIO();
@@ -404,7 +407,7 @@ Error ImGuiInterface::drawData(ImDrawData * _drawData)
     if (fb_width == 0 || fb_height == 0)
         return Error();
 
-    _drawData->ScaleClipRects(io.DisplayFramebufferScale);
+    drawData->ScaleClipRects(io.DisplayFramebufferScale);
 
     // Setup viewport, orthographic projection matrix
     // glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
@@ -421,9 +424,9 @@ Error ImGuiInterface::drawData(ImDrawData * _drawData)
 
     m_vertexDrawData.clear();
     m_indexDrawData.clear();
-    for (int n = 0; n < _drawData->CmdListsCount; n++)
+    for (int n = 0; n < drawData->CmdListsCount; n++)
     {
-        const ImDrawList * cmd_list = _drawData->CmdLists[n];
+        const ImDrawList * cmd_list = drawData->CmdLists[n];
         m_vertexDrawData.append(cmd_list->VtxBuffer.Data,
                                 cmd_list->VtxBuffer.Data + cmd_list->VtxBuffer.Size);
         m_indexDrawData.append(cmd_list->IdxBuffer.Data,
@@ -437,9 +440,9 @@ Error ImGuiInterface::drawData(ImDrawData * _drawData)
 
     Size vtxOffset = 0;
     Size idxOffset = 0;
-    for (int n = 0; n < _drawData->CmdListsCount; n++)
+    for (int n = 0; n < drawData->CmdListsCount; n++)
     {
-        const ImDrawList * cmd_list = _drawData->CmdLists[n];
+        const ImDrawList * cmd_list = drawData->CmdLists[n];
 
         for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
         {
@@ -506,9 +509,7 @@ RenderWindow::~RenderWindow()
     destroyRenderDevice(m_renderDevice);
 }
 
-Error RenderWindow::open(const WindowSettings & _settings,
-                         const char * _uiFontURI,
-                         Float32 _uiFontSize)
+Error RenderWindow::open(const WindowSettings & _settings)
 {
     Error ret = Window::open(_settings);
     if (ret)
@@ -519,7 +520,14 @@ Error RenderWindow::open(const WindowSettings & _settings,
     m_renderDevice = res.get();
     m_tmpImage = makeUnique<ImageRGBA8>(widthInPixels(), heightInPixels());
 
-    return m_gui.init(*m_renderDevice, *this, _uiFontURI, _uiFontSize);
+    return Error();
+}
+
+Error RenderWindow::enableDefaultUI(const char * _uiFontURI, Float32 _uiFontSize)
+{
+    STICK_ASSERT(!m_gui);
+    m_gui = makeUnique<ImGuiInterface>();
+    return m_gui->init(*m_renderDevice, *this, _uiFontURI, _uiFontSize);
 }
 
 ImageUniquePtr RenderWindow::frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h)
@@ -571,22 +579,24 @@ Error RenderWindow::run()
         Float64 dur = m_lastFrameTime ? (now - *m_lastFrameTime).seconds() : 1.0 / 60.0;
         luke::pollEvents();
         m_renderDevice->beginFrame();
-        Error err = m_gui.newFrame(dur);
-        if (err)
-            return err;
+        Error err;
+        if (m_gui)
+        {
+            err = m_gui->newFrame(dur);
+            if (err)
+                return err;
+        }
 
         err = m_drawFunc(dur);
         if (err)
             return err;
 
-        // ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
-        ImGui::ShowDemoWindow();
-
-        ImGui::Render();
-        err = m_gui.drawData(ImGui::GetDrawData());
-
-        if (err)
-            return err;
+        if (m_gui)
+        {
+            err = m_gui->finalizeFrame();
+            if (err)
+                return err;
+        }
 
         err = m_renderDevice->endFrame();
         if (err)
@@ -623,13 +633,11 @@ PaperWindow::PaperWindow() : m_bAutoResize(true)
 {
 }
 
-Error PaperWindow::open(const WindowSettings & _settings,
-                        const char * _uiFontURI,
-                        Float32 _uiFontSize)
+Error PaperWindow::open(const WindowSettings & _settings)
 {
     this->addEventCallback([this](const WindowResizeEvent & _evt) { this->updateDocumentSize(); });
 
-    Error err = RenderWindow::open(_settings, _uiFontURI, _uiFontSize);
+    Error err = RenderWindow::open(_settings);
     if (err)
         return err;
 

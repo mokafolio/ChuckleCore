@@ -55,7 +55,7 @@ class STICK_API ImGuiInterface : public stick::EventForwarder
                const char * _fontURI,
                Float32 _fontSize);
     Error newFrame(Float64 _deltaTime);
-    Error drawData(ImDrawData * _drawData);
+    Error finalizeFrame();
 
   private:
     // the window that the ui is drawn to and dispatches the events to the UI
@@ -86,7 +86,8 @@ class STICK_API RenderWindow : public Window
     RenderWindow();
     virtual ~RenderWindow();
 
-    Error open(const WindowSettings & _settings, const char * _uiFontURI = NULL, Float32 _uiFontSize = 14.0f);
+    Error open(const WindowSettings & _settings);
+    Error enableDefaultUI(const char * _uiFontURI = NULL, Float32 _uiFontSize = 14.0f);
     ImageUniquePtr frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
     ImageUniquePtr frameImage();
     Error saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
@@ -105,7 +106,7 @@ class STICK_API RenderWindow : public Window
     Maybe<SystemClock::TimePoint> m_lastFrameTime;
 
     //imgui stuffs
-    ImGuiInterface m_gui;
+    stick::UniquePtr<ImGuiInterface> m_gui;
 
     // helpers to compute FPS (simple moving average)
     FixedArray<Float64, 100> m_fpsBuffer;
@@ -119,7 +120,7 @@ class STICK_API PaperWindow : public RenderWindow
 {
   public:
     PaperWindow();
-    Error open(const WindowSettings & _settings, const char * _uiFontURI = NULL, Float32 _uiFontSize = 14.0f);
+    Error open(const WindowSettings & _settings);
     Document & document();
     tarp::TarpRenderer & paperRenderer();
     void drawDocument(RenderPass * _pass);
