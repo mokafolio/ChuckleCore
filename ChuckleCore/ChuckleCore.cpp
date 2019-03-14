@@ -91,7 +91,7 @@ String executableDirectoryName(Allocator & _alloc)
     int dirPathLen;
     String ret(length, _alloc);
     wai_getExecutablePath((char *)ret.ptr(), length, &dirPathLen);
-
+    ret.resize(dirPathLen);
     return ret;
 }
 
