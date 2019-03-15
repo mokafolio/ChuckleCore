@@ -810,6 +810,7 @@ void applyNoise(
             pos += Vec2f(std::cos(ang) * _noiseScale, std::sin(ang) * _noiseScale);
             seg.setPosition(pos);
         }
+        p->smooth(Smoothing::Continuous, false);
     }
 
     for (Item * child : _item->children())
