@@ -829,12 +829,9 @@ void morph(Path * _a, Path * _b, Float32 _t, Path * _output)
     {
         Segment a = _a->segment(i);
         Segment b = _b->segment(i);
-        // _output->addSegment(mix(a.position(), b.position(), _t),
-        //                     mix(a.handleIn(), b.handleIn(), _t),
-        //                     mix(a.handleOut(), b.handleOut(), _t));
         _output->addSegment(mix(a.position(), b.position(), _t),
-                            Vec2f(0, 0),
-                            Vec2f(0, 0));
+                            mix(a.handleIn(), b.handleIn(), _t),
+                            mix(a.handleOut(), b.handleOut(), _t));
     }
 
     if (_a->isClosed())
