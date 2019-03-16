@@ -618,9 +618,8 @@ Error RenderWindow::run()
                 ImGuiIO & io = ImGui::GetIO();
                 if (corner != -1)
                 {
-                    ImVec2 window_pos =
-                        ImVec2((corner & 1) ? io.DisplaySize.x - dist : dist,
-                               (corner & 2) ? io.DisplaySize.y - dist : dist);
+                    ImVec2 window_pos = ImVec2((corner & 1) ? io.DisplaySize.x - dist : dist,
+                                               (corner & 2) ? io.DisplaySize.y - dist : dist);
                     ImVec2 window_pos_pivot =
                         ImVec2((corner & 1) ? 1.0f : 0.0f, (corner & 2) ? 1.0f : 0.0f);
                     ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
@@ -830,9 +829,12 @@ void morph(Path * _a, Path * _b, Float32 _t, Path * _output)
     {
         Segment a = _a->segment(i);
         Segment b = _b->segment(i);
+        // _output->addSegment(mix(a.position(), b.position(), _t),
+        //                     mix(a.handleIn(), b.handleIn(), _t),
+        //                     mix(a.handleOut(), b.handleOut(), _t));
         _output->addSegment(mix(a.position(), b.position(), _t),
-                            mix(a.handleIn(), b.handleIn(), _t),
-                            mix(a.handleOut(), b.handleOut(), _t));
+                            Vec2f(0, 0),
+                            Vec2f(0, 0));
     }
 
     if (_a->isClosed())
