@@ -547,6 +547,11 @@ bool RenderWindow::isShowingWindowMetrics() const
     return m_bShowWindowMetrics;
 }
 
+ImGuiInterface * RenderWindow::imGuiInterface()
+{
+    return m_gui.get();
+}
+
 ImageUniquePtr RenderWindow::frameImage(UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h)
 {
     ImageUniquePtr img = makeUnique<ImageRGBA8>(_w, _h);

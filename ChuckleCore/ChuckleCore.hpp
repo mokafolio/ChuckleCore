@@ -100,6 +100,7 @@ class STICK_API RenderWindow : public Window
     Float64 fps() const;
     Size frameCount() const;
     bool isShowingWindowMetrics() const;
+    ImGuiInterface * imGuiInterface();
     
   protected:
     RenderDevice * m_renderDevice;
