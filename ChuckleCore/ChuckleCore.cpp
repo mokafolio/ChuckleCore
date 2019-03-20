@@ -727,7 +727,7 @@ void PaperWindow::updateDocumentSize()
     {
         m_doc.setSize(width(), height());
         m_paperRenderer.setViewport(0, 0, widthInPixels(), heightInPixels());
-        m_paperRenderer.setSize(width(), height());
+        m_paperRenderer.setDefaultProjection();
     }
 }
 
