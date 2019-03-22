@@ -246,10 +246,10 @@ Error ImGuiInterface::init(RenderDevice & _renderDevice,
     // and prevent all mouse/keyboard events to propagate to forwarders down the chain
     // if imgui is capturing them.
     addEventCategoryFilter<MouseEventCategory>(
-        [&io](const stick::Event & _evt) { return io.WantCaptureMouse; }, true);
+        [&io](const stick::Event & _evt) { return io.WantCaptureMouse; });
 
     addEventCategoryFilter<KeyEventCategory>(
-        [&io](const stick::Event & _evt) { return io.WantCaptureKeyboard; }, true);
+        [&io](const stick::Event & _evt) { return io.WantCaptureKeyboard; });
 
     const char * vertex_shader =
         "#version 410 core \n"
