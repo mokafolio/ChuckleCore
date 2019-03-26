@@ -1,6 +1,7 @@
 #ifndef CHUCKLECORE_CHUCKLECORE_HPP
 #define CHUCKLECORE_CHUCKLECORE_HPP
 
+#include <Crunch/MatrixFunc.hpp>
 #include <Crunch/PerlinNoise.hpp>
 #include <Crunch/Randomizer.hpp>
 #include <Dab/Dab.hpp>
@@ -78,6 +79,95 @@ class STICK_API ImGuiInterface : public stick::EventForwarder
     DynamicArray<ImDrawIdx> m_indexDrawData;
 };
 
+class STICK_API QuickDraw
+{
+    //@TODO: Add matrix stack operations (i.e. translate, rotate etc.)
+    //@TODO: Add more drawing operations
+    //@TODO: Add a way to draw textures (mainly for debugging purposes)
+  public:
+    
+    struct Vertex
+    {
+        Vec3f vertex;
+        ColorRGBA color;
+    };
+
+    using MatrixStack = stick::DynamicArray<Mat4f>;
+    using GeometryBuffer = stick::DynamicArray<Vertex>;
+
+    struct DrawCall
+    {
+        Size vertexOffset;
+        Size vertexCount;
+        Mat4f tp;
+        VertexDrawMode mode;
+    };
+
+    using DrawCallBuffer = stick::DynamicArray<DrawCall>;
+
+
+    QuickDraw();
+
+    Error init(RenderDevice * _rd, stick::Allocator & _alloc);
+
+    void setViewport(Float32 _x, Float32 _y, Float32 _w, Float32 _h);
+    void setTransform(const Mat4f & _transform);
+    void setTransform(const Mat32f & _transform);
+    void setProjection(const Mat4f & _proj);
+    void setProjection(const Mat32f & _proj);
+    void pushTransform();
+    void popTransform();
+    void pushProjection();
+    void popProjection();
+    void applyTransform(const Mat4f & _trans);
+    void applyTransform(const Mat32f & _trans);
+    void setColor(const ColorRGBA & _col);
+
+    const Mat4f & transform() const;
+    const Mat4f & projection() const;
+    const Mat4f & transformProjection() const;
+
+    void draw(RenderPass * _pass = nullptr);
+
+    void rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
+    void lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
+
+    void lines(const Vec2f * _ptr, Size _count);
+    void lines(const Vec3f * _ptr, Size _count);
+    void lines(const Vertex * _ptr, Size _count);
+
+    void lineStrip(const Vec2f * _ptr, Size _count, bool _bClosed = false);
+    void lineStrip(const Vec3f * _ptr, Size _count, bool _bClosed = false);
+    void lineStrip(const Vertex * _ptr, Size _count, bool _bClosed = false);
+
+    void points(const Vec2f * _ptr, Size _count);
+    void points(const Vec3f * _ptr, Size _count);
+    void points(const Vertex * _ptr, Size _count);
+
+    void rects(const Vec2f * _points, Size _count, Float32 _radius);
+    void lineRects(const Vec2f * _points, Size _count, Float32 _radius);
+
+  private:
+
+    RenderDevice * m_renderDevice;
+    MatrixStack m_transformStack;
+    MatrixStack m_projectionStack;
+    Mat4f m_transform;
+    Mat4f m_projection;
+    mutable stick::Maybe<Mat4f> m_transformProjection;
+    Rectf m_viewport;
+    ColorRGBA m_color;
+
+    Program * m_program;
+    Pipeline * m_pipeline;
+    PipelineVariable * m_tpPVar;
+    // PipelineTexture * m_pipeTex;
+    VertexBuffer * m_vertexBuffer;
+    Mesh * m_mesh;
+    GeometryBuffer m_geometryBuffer;
+    DrawCallBuffer m_drawCalls;
+};
+
 class STICK_API RenderWindow : public Window
 {
   public:
@@ -101,15 +191,20 @@ class STICK_API RenderWindow : public Window
     Size frameCount() const;
     bool isShowingWindowMetrics() const;
     ImGuiInterface * imGuiInterface();
-    
+    QuickDraw & quickDraw();
+
   protected:
+
+    void updateQuickDrawSize();
+
     RenderDevice * m_renderDevice;
     ImageUniquePtr m_tmpImage;
     DrawFunction m_drawFunc;
     SystemClock m_clock;
     Maybe<SystemClock::TimePoint> m_lastFrameTime;
+    QuickDraw m_quickDraw;
 
-    //imgui stuffs
+    // imgui stuffs
     stick::UniquePtr<ImGuiInterface> m_gui;
     bool m_bShowWindowMetrics;
 
@@ -128,12 +223,17 @@ class STICK_API PaperWindow : public RenderWindow
     Error open(const WindowSettings & _settings);
     Document & document();
     tarp::TarpRenderer & paperRenderer();
-    void drawDocument(RenderPass * _pass);
+
     void setAutoResize(bool _b);
     bool autoResize() const;
 
-  protected:
+    void drawDocument(RenderPass * _pass);
+    void drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bDrawChildren = true);
+    void drawPathHandles(Path * _path, const ColorRGBA & _col, Float32 _radius = 2, bool _bDrawChildren = true);
+    void drawItemBoundingBox(Path * _path, const ColorRGBA & _col, bool _bDrawChildren = false);
 
+  protected:
+    void drawPathOutlineHelper(Path * _path, const ColorRGBA & _col, bool _bDrawChildren);
     void updateDocumentSize();
 
     Document m_doc;

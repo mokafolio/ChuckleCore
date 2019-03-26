@@ -19,9 +19,29 @@ int main(int _argc, const char * _args[])
     RETURN_ON_ERR(window.enableDefaultUI());
 
     Document & doc = window.document();
+    auto & pr = window.paperRenderer();
 
     Path * circle = doc.createCircle(Vec2f(window.width() * 0.5, window.height() * 0.5), 100);
     circle->setFill("red");
+
+    Path * circle2 = doc.createCircle(Vec2f(window.width() * 0.5, window.height() * 0.5), 50);
+    circle2->setFill("yellow");
+    circle->addChild(circle2);
+
+    Vec2f * verts;
+    Size count;
+    pr.flattenedPathVertices(circle2, &verts, &count, circle->transform());
+    DynamicArray<Vec2f> vertsa;
+    vertsa.append(verts, verts + count);
+
+    DynamicArray<Vec2f> handles;
+    for(auto seg : circle->segments())
+    {
+        handles.append(seg.handleInAbsolute());
+        handles.append(seg.handleOutAbsolute());
+    }
+
+    printf("handles.count() %lu\n", handles.count());
 
     window.setDrawFunction([&](Float64 _deltaTime)
     {
@@ -29,6 +49,12 @@ int main(int _argc, const char * _args[])
         RenderPass * pass = rd.beginPass(ClearSettings(0, 0, 0, 1));
         window.drawDocument(pass);
         rd.endPass(pass);
+
+        window.quickDraw().setColor(ColorRGBA(0, 1, 0, 1));
+        window.drawPathOutline(circle, ColorRGBA(1, 1, 0, 1));
+        window.drawPathHandles(circle, ColorRGBA(0, 0, 1, 1));
+        auto bounds = circle2->bounds();
+
         return Error();
     });
 
