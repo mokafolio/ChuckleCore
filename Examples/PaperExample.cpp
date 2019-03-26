@@ -28,6 +28,9 @@ int main(int _argc, const char * _args[])
     circle2->setFill("yellow");
     circle->addChild(circle2);
 
+    circle->translateTransform(100, 0);
+    circle2->translateTransform(100, 0);
+
     Vec2f * verts;
     Size count;
     pr.flattenedPathVertices(circle2, &verts, &count, circle->transform());

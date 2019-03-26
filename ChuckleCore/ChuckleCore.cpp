@@ -1,6 +1,8 @@
 #include <ChuckleCore/ChuckleCore.hpp>
 #include <whereami.h>
 
+#include <Crunch/StringConversion.hpp>
+
 namespace chuckle
 {
 
@@ -579,6 +581,7 @@ void QuickDraw::setTransform(const Mat4f & _transform)
 
 void QuickDraw::setTransform(const Mat32f & _transform)
 {
+    printf("MAT %s\n", toString(to3DTransform(_transform)).cString());
     setTransform(to3DTransform(_transform));
 }
 
@@ -640,7 +643,7 @@ const Mat4f & QuickDraw::projection() const
 const Mat4f & QuickDraw::transformProjection() const
 {
     if (!m_transformProjection)
-        m_transformProjection = m_transform * m_projection;
+        m_transformProjection = m_projection * m_transform;
     return *m_transformProjection;
 }
 
@@ -1167,26 +1170,31 @@ void PaperWindow::drawPathOutlineHelper(Path * _path, const ColorRGBA & _col, bo
     Size count;
     paperRenderer().flattenedPathVertices(_path, &verts, &count, _path->transform());
     quickDraw().lineStrip(verts, count, _path->isClosed());
-    if(_bDrawChildren)
+    if (_bDrawChildren)
     {
-        for(Item * child : _path->children())
-            drawPathOutlineHelper(static_cast<Path*>(child), _col, _bDrawChildren);
+        for (Item * child : _path->children())
+            drawPathOutlineHelper(static_cast<Path *>(child), _col, _bDrawChildren);
     }
 }
 
 void PaperWindow::drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bDrawChildren)
 {
-    quickDraw().setTransform(Mat4f::identity());
+    quickDraw().setTransform(_path->absoluteTransform());
     drawPathOutlineHelper(_path, _col, _bDrawChildren);
 }
 
-static void _addHandleDrawData(Path * _path, DynamicArray<Vec2f> & _outPositions, DynamicArray<Vec2f> & _outLines, bool _bDrawChildren)
+static void _addHandleDrawData(Path * _path,
+                               DynamicArray<Vec2f> & _outPositions,
+                               DynamicArray<Vec2f> & _outLines,
+                               bool _bDrawChildren)
 {
-    for(auto seg : _path->segments())
+    const Mat32f & absTrans = _path->absoluteTransform();
+    for (auto seg : _path->segments())
     {
-        const Vec2f & a = seg.handleInAbsolute();
-        const Vec2f & b = seg.handleOutAbsolute();
-        const Vec2f & c = seg.position();
+        const Vec2f & a = absTrans * seg.handleInAbsolute();
+        const Vec2f & b = absTrans * seg.handleOutAbsolute();
+        const Vec2f & c = absTrans * seg.position();
+
         _outPositions.append(a);
         _outPositions.append(b);
         _outLines.append(c);
@@ -1194,21 +1202,27 @@ static void _addHandleDrawData(Path * _path, DynamicArray<Vec2f> & _outPositions
         _outLines.append(c);
         _outLines.append(b);
     }
-    if(_bDrawChildren)
+
+    if (_bDrawChildren)
     {
-        for(Item * child : _path->children())
-            _addHandleDrawData(static_cast<Path*>(child), _outPositions, _outLines, _bDrawChildren);
+        for (Item * child : _path->children())
+            _addHandleDrawData(
+                static_cast<Path *>(child), _outPositions, _outLines, _bDrawChildren);
     }
 }
 
-void PaperWindow::drawPathHandles(Path * _path, const ColorRGBA & _col, Float32 _radius, bool _bDrawChildren)
-{   
+void PaperWindow::drawPathHandles(Path * _path,
+                                  const ColorRGBA & _col,
+                                  Float32 _radius,
+                                  bool _bDrawChildren)
+{
     //@TODO: put the buffer into either paperwindow or quickdraw
     DynamicArray<Vec2f> rects;
     rects.reserve(16);
     DynamicArray<Vec2f> lines;
     lines.reserve(32);
     _addHandleDrawData(_path, rects, lines, _bDrawChildren);
+    // quickDraw().setTransform(_path->absoluteTransform());
     quickDraw().setTransform(Mat4f::identity());
     quickDraw().setColor(_col);
     quickDraw().lines(&lines[0], lines.count());
@@ -1217,7 +1231,7 @@ void PaperWindow::drawPathHandles(Path * _path, const ColorRGBA & _col, Float32 
 
 void PaperWindow::drawItemBoundingBox(Path * _path, const ColorRGBA & _col, bool _bDrawChildren)
 {
-
+    
 }
 
 namespace path
