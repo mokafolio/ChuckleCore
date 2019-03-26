@@ -231,6 +231,7 @@ class STICK_API PaperWindow : public RenderWindow
     bool autoResize() const;
 
     void drawDocument(RenderPass * _pass);
+    
     void drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bDrawChildren = true);
     void drawMultiplePathOutlines(Path ** _paths, Size _count, const ColorRGBA & _col, bool _bDrawChildren = true);
     void drawPathHandles(Path * _path, const ColorRGBA & _col, Float32 _radius = 2, bool _bDrawChildren = true);

@@ -1175,7 +1175,7 @@ void PaperWindow::drawPathOutlineHelper(Path * _path, const ColorRGBA & _col, bo
 {
     Vec2f * verts;
     Size count;
-    paperRenderer().flattenedPathVertices(_path, &verts, &count, _path->transform());
+    paperRenderer().flattenedPathVertices(_path, &verts, &count, _path->absoluteTransform());
     quickDraw().lineStrip(verts, count, _path->isClosed());
     if (_bDrawChildren)
     {
