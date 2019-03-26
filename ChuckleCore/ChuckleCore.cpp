@@ -1171,7 +1171,7 @@ void PaperWindow::drawDocument(RenderPass * _pass)
     _pass->drawCustom([this] { return m_paperRenderer.draw(); });
 }
 
-void PaperWindow::drawPathOutlineHelper(Path * _path, const ColorRGBA & _col, bool _bDrawChildren)
+void PaperWindow::drawPathOutlineHelper(Path * _path, bool _bDrawChildren)
 {
     Vec2f * verts;
     Size count;
@@ -1180,14 +1180,15 @@ void PaperWindow::drawPathOutlineHelper(Path * _path, const ColorRGBA & _col, bo
     if (_bDrawChildren)
     {
         for (Item * child : _path->children())
-            drawPathOutlineHelper(static_cast<Path *>(child), _col, _bDrawChildren);
+            drawPathOutlineHelper(static_cast<Path *>(child), _bDrawChildren);
     }
 }
 
 void PaperWindow::drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bDrawChildren)
 {
     quickDraw().setTransform(_path->absoluteTransform());
-    drawPathOutlineHelper(_path, _col, _bDrawChildren);
+    quickDraw().setColor(_col);
+    drawPathOutlineHelper(_path, _bDrawChildren);
 }
 
 void PaperWindow::drawMultiplePathOutlines(Path ** _paths,

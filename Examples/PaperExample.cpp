@@ -54,9 +54,9 @@ int main(int _argc, const char * _args[])
         window.drawDocument(pass);
         rd.endPass(pass);
 
-        window.quickDraw().setColor(ColorRGBA(0, 1, 0, 1));
+        // window.quickDraw().setColor(ColorRGBA(0, 1, 0, 1));
         window.drawPathOutline(circle, ColorRGBA(1, 1, 0, 1));
-        window.drawPathHandles(circle, ColorRGBA(0, 0, 1, 1));
+        // window.drawPathHandles(circle, ColorRGBA(0, 0, 1, 1));
         window.drawItemBoundingBox(circle, ColorRGBA(1, 0, 1, 1), true);
         auto bounds = circle2->bounds();
 
