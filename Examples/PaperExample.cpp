@@ -14,6 +14,7 @@ int main(int _argc, const char * _args[])
     PaperWindow window;
     WindowSettings settings;
     settings.setTitle("Yoyoyoyo");
+    settings.setSampleCount(4);
     RETURN_ON_ERR(window.open(settings));
     window.setVerticalSync(true);
     RETURN_ON_ERR(window.enableDefaultUI());
@@ -28,8 +29,8 @@ int main(int _argc, const char * _args[])
     circle2->setFill("yellow");
     circle->addChild(circle2);
 
-    circle->translateTransform(100, 0);
-    circle2->translateTransform(100, 0);
+    circle->translateTransform(100.323, 0);
+    circle2->translateTransform(100.26246, 0);
 
     Vec2f * verts;
     Size count;
@@ -56,6 +57,7 @@ int main(int _argc, const char * _args[])
         window.quickDraw().setColor(ColorRGBA(0, 1, 0, 1));
         window.drawPathOutline(circle, ColorRGBA(1, 1, 0, 1));
         window.drawPathHandles(circle, ColorRGBA(0, 0, 1, 1));
+        window.drawItemBoundingBox(circle, ColorRGBA(1, 0, 1, 1), true);
         auto bounds = circle2->bounds();
 
         return Error();

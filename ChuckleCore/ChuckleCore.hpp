@@ -147,6 +147,9 @@ class STICK_API QuickDraw
     void rects(const Vec2f * _points, Size _count, Float32 _radius);
     void lineRects(const Vec2f * _points, Size _count, Float32 _radius);
 
+    GeometryBuffer & geometryBuffer();
+    DrawCallBuffer & drawCalls();
+
   private:
 
     RenderDevice * m_renderDevice;
@@ -229,8 +232,11 @@ class STICK_API PaperWindow : public RenderWindow
 
     void drawDocument(RenderPass * _pass);
     void drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bDrawChildren = true);
+    void drawMultiplePathOutlines(Path ** _paths, Size _count, const ColorRGBA & _col, bool _bDrawChildren = true);
     void drawPathHandles(Path * _path, const ColorRGBA & _col, Float32 _radius = 2, bool _bDrawChildren = true);
-    void drawItemBoundingBox(Path * _path, const ColorRGBA & _col, bool _bDrawChildren = false);
+    void drawMultiplePathHandles(Path ** _paths, Size _count, const ColorRGBA & _col, Float32 _radius = 2, bool _bDrawChildren = true);
+    void drawItemBoundingBox(Item * _item, const ColorRGBA & _col, bool _bDrawChildren = false);
+    void drawMultipleItemBoundingBoxes(Item ** _items, Size _count, const ColorRGBA & _col, bool _bDrawChildren = false);
 
   protected:
     void drawPathOutlineHelper(Path * _path, const ColorRGBA & _col, bool _bDrawChildren);
