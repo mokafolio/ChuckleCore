@@ -128,6 +128,7 @@ class STICK_API QuickDraw
     const Mat4f & transformProjection() const;
 
     void draw(RenderPass * _pass = nullptr);
+    void flush();
 
     void rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
     void lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);

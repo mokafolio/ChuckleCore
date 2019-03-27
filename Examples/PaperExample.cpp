@@ -59,7 +59,8 @@ int main(int _argc, const char * _args[])
         // window.drawPathHandles(circle, ColorRGBA(0, 0, 1, 1));
         window.drawItemBoundingBox(circle, ColorRGBA(1, 0, 1, 1), true);
         auto bounds = circle2->bounds();
-
+        window.quickDraw().draw();
+        
         return Error();
     });
 

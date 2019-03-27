@@ -674,8 +674,14 @@ void QuickDraw::draw(RenderPass * _pass)
             m_renderDevice->endPass(_pass);
 
         m_drawCalls.clear();
-        m_geometryBuffer.clear();
     }
+}
+
+void QuickDraw::flush()
+{
+    m_vertexBuffer->loadDataRaw((void *)m_geometryBuffer.ptr(),
+                                m_geometryBuffer.count() * sizeof(Vertex));
+    m_geometryBuffer.clear();
 }
 
 void QuickDraw::rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
@@ -1080,6 +1086,7 @@ Error RenderWindow::run()
         }
 
         m_quickDraw.draw();
+        m_quickDraw.flush();
         err = m_renderDevice->endFrame();
         if (err)
             return err;
@@ -1244,7 +1251,7 @@ void PaperWindow::drawMultiplePathHandles(
     rects.reserve(_count * 16);
     DynamicArray<Vec2f> lines;
     lines.reserve(_count * 32);
-    for(Size i = 0; i < _count; ++i)
+    for (Size i = 0; i < _count; ++i)
         _addHandleDrawData(_paths[i], rects, lines, _bDrawChildren);
     quickDraw().setTransform(Mat4f::identity());
     quickDraw().setColor(_col);
