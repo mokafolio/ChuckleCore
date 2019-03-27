@@ -53,10 +53,8 @@ int main(int _argc, const char * _args[])
         RenderPass * pass = rd.beginPass(ClearSettings(0, 0, 0, 1));
         window.drawDocument(pass);
 
-        window.quickDraw().beginPass(pass);
         window.drawPathOutline(circle, ColorRGBA(1, 1, 0, 1));
         window.drawItemBoundingBox(circle, ColorRGBA(1, 0, 1, 1), true);
-        window.quickDraw().endPass();
 
         return rd.endPass(pass);
     });

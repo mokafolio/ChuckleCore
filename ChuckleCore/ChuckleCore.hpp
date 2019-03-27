@@ -56,7 +56,7 @@ class STICK_API ImGuiInterface : public stick::EventForwarder
                const char * _fontURI,
                Float32 _fontSize);
     Error newFrame(Float64 _deltaTime);
-    Error finalizeFrame();
+    Error finalizeFrame(RenderPass * _pass);
 
   private:
     // the window that the ui is drawn to and dispatches the events to the UI
@@ -123,9 +123,10 @@ class STICK_API QuickDraw
 
     const Mat4f & transform() const;
     const Mat4f & projection() const;
+    const Mat4f & transformProjection() const;
 
-    void beginPass(RenderPass * _pass);
-    void endPass();
+    void addToPass(RenderPass * _pass); //will queue the currently buffered draw commands on the provided pass
+    void flush(); //should be called once per frame just before any renderpass that has been submitted too is finalized
 
     void rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
     void lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
@@ -149,7 +150,6 @@ class STICK_API QuickDraw
     DrawCallBuffer & drawCalls();
 
   private:
-    void setTransformProjectionForDrawCall();
 
     template <class T>
     void addDrawCall(const T *, Size, const ColorRGBA &, VertexDrawMode);
@@ -171,7 +171,6 @@ class STICK_API QuickDraw
     Mesh * m_mesh;
     GeometryBuffer m_geometryBuffer;
     DrawCallBuffer m_drawCalls;
-    RenderPass * m_currentPass;
 };
 
 class STICK_API RenderWindow : public Window
