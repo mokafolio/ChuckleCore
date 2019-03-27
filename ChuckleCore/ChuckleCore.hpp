@@ -85,7 +85,6 @@ class STICK_API QuickDraw
     //@TODO: Add more drawing operations
     //@TODO: Add a way to draw textures (mainly for debugging purposes)
   public:
-    
     struct Vertex
     {
         Vec3f vertex;
@@ -104,7 +103,6 @@ class STICK_API QuickDraw
     };
 
     using DrawCallBuffer = stick::DynamicArray<DrawCall>;
-
 
     QuickDraw();
 
@@ -125,10 +123,9 @@ class STICK_API QuickDraw
 
     const Mat4f & transform() const;
     const Mat4f & projection() const;
-    const Mat4f & transformProjection() const;
 
-    void draw(RenderPass * _pass = nullptr);
-    void flush();
+    void beginPass(RenderPass * _pass);
+    void endPass();
 
     void rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
     void lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
@@ -152,6 +149,10 @@ class STICK_API QuickDraw
     DrawCallBuffer & drawCalls();
 
   private:
+    void setTransformProjectionForDrawCall();
+
+    template <class T>
+    void addDrawCall(const T *, Size, const ColorRGBA &, VertexDrawMode);
 
     RenderDevice * m_renderDevice;
     MatrixStack m_transformStack;
@@ -170,6 +171,7 @@ class STICK_API QuickDraw
     Mesh * m_mesh;
     GeometryBuffer m_geometryBuffer;
     DrawCallBuffer m_drawCalls;
+    RenderPass * m_currentPass;
 };
 
 class STICK_API RenderWindow : public Window
@@ -198,7 +200,6 @@ class STICK_API RenderWindow : public Window
     QuickDraw & quickDraw();
 
   protected:
-
     void updateQuickDrawSize();
 
     RenderDevice * m_renderDevice;
@@ -234,11 +235,24 @@ class STICK_API PaperWindow : public RenderWindow
     void drawDocument(RenderPass * _pass);
 
     void drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bDrawChildren = true);
-    void drawMultiplePathOutlines(Path ** _paths, Size _count, const ColorRGBA & _col, bool _bDrawChildren = true);
-    void drawPathHandles(Path * _path, const ColorRGBA & _col, Float32 _radius = 2, bool _bDrawChildren = true);
-    void drawMultiplePathHandles(Path ** _paths, Size _count, const ColorRGBA & _col, Float32 _radius = 2, bool _bDrawChildren = true);
+    void drawMultiplePathOutlines(Path ** _paths,
+                                  Size _count,
+                                  const ColorRGBA & _col,
+                                  bool _bDrawChildren = true);
+    void drawPathHandles(Path * _path,
+                         const ColorRGBA & _col,
+                         Float32 _radius = 2,
+                         bool _bDrawChildren = true);
+    void drawMultiplePathHandles(Path ** _paths,
+                                 Size _count,
+                                 const ColorRGBA & _col,
+                                 Float32 _radius = 2,
+                                 bool _bDrawChildren = true);
     void drawItemBoundingBox(Item * _item, const ColorRGBA & _col, bool _bDrawChildren = false);
-    void drawMultipleItemBoundingBoxes(Item ** _items, Size _count, const ColorRGBA & _col, bool _bDrawChildren = false);
+    void drawMultipleItemBoundingBoxes(Item ** _items,
+                                       Size _count,
+                                       const ColorRGBA & _col,
+                                       bool _bDrawChildren = false);
 
   protected:
     void drawPathOutlineHelper(Path * _path, bool _bDrawChildren);

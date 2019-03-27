@@ -52,16 +52,13 @@ int main(int _argc, const char * _args[])
         RenderDevice & rd = window.renderDevice();
         RenderPass * pass = rd.beginPass(ClearSettings(0, 0, 0, 1));
         window.drawDocument(pass);
-        rd.endPass(pass);
 
-        // window.quickDraw().setColor(ColorRGBA(0, 1, 0, 1));
+        window.quickDraw().beginPass(pass);
         window.drawPathOutline(circle, ColorRGBA(1, 1, 0, 1));
-        // window.drawPathHandles(circle, ColorRGBA(0, 0, 1, 1));
         window.drawItemBoundingBox(circle, ColorRGBA(1, 0, 1, 1), true);
-        auto bounds = circle2->bounds();
-        window.quickDraw().draw();
-        
-        return Error();
+        window.quickDraw().endPass();
+
+        return rd.endPass(pass);
     });
 
     RETURN_ON_ERR(window.run());

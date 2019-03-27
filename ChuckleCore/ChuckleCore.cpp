@@ -157,6 +157,8 @@ Error ImGuiInterface::init(RenderDevice & _renderDevice,
                            const char * _fontURI,
                            Float32 _fontSize)
 {
+    static_assert(sizeof(ImDrawIdx) == 4, "Please set ImDrawIdx to use integers in imconfig.h");
+
     ImGui::CreateContext();
     m_renderDevice = &_renderDevice;
     m_window = &_window;
@@ -453,25 +455,6 @@ Error ImGuiInterface::finalizeFrame()
             }
             else
             {
-                // RenderState state;
-                // state.setGlobalMat4f("projection", Mat4f(&ortho_projection[0][0]));
-                // state.setProgram(m_program);
-                // state.setBlending(true);
-                // state.setScissor((int)pcmd->ClipRect.x,
-                //                  (int)(fb_height - pcmd->ClipRect.w),
-                //                  (int)(pcmd->ClipRect.z - pcmd->ClipRect.x),
-                //                  (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
-
-                // state.setTexture("Texture", (TextureHandle)(Size)(intptr_t)pcmd->TextureId);
-
-                // STICK_ASSERT(sizeof(ImDrawIdx) == 4);
-                // Error err = m_renderer->drawMesh(
-                //     m_mesh, VertexDrawMode::Triangles, idx_buffer_offset, pcmd->ElemCount,
-                //     state);
-                // if (err)
-                //     return err;
-
-                STICK_ASSERT(sizeof(ImDrawIdx) == 4);
                 m_pipeTex->set((Texture *)(intptr_t)pcmd->TextureId, m_sampler);
                 pass->setScissor((int)pcmd->ClipRect.x,
                                  (int)(fb_height - pcmd->ClipRect.w),
@@ -493,7 +476,7 @@ Error ImGuiInterface::finalizeFrame()
     return Error();
 }
 
-QuickDraw::QuickDraw() : m_renderDevice(nullptr)
+QuickDraw::QuickDraw() : m_renderDevice(nullptr), m_currentPass(nullptr)
 {
 }
 
@@ -637,11 +620,13 @@ const Mat4f & QuickDraw::projection() const
     return m_projection;
 }
 
-const Mat4f & QuickDraw::transformProjection() const
+void QuickDraw::setTransformProjectionForDrawCall()
 {
     if (!m_transformProjection)
+    {
         m_transformProjection = m_projection * m_transform;
-    return *m_transformProjection;
+        m_tpPVar->setMat4f(m_transformProjection->ptr());
+    }
 }
 
 void QuickDraw::setColor(const ColorRGBA & _col)
@@ -649,49 +634,71 @@ void QuickDraw::setColor(const ColorRGBA & _col)
     m_color = _col;
 }
 
-void QuickDraw::draw(RenderPass * _pass)
+void QuickDraw::beginPass(RenderPass * _pass)
 {
-    if (m_drawCalls.count())
-    {
-        bool bInternalPass = !_pass;
-
-        if (bInternalPass)
-            _pass = m_renderDevice->beginPass();
-
-        _pass->setViewport(
-            m_viewport.min().x, m_viewport.min().y, m_viewport.width(), m_viewport.height());
-
-        // m_vertexBuffer->loadDataRaw((void *)m_geometryBuffer.ptr(),
-        //                             m_geometryBuffer.count() * sizeof(Vertex));
-
-        for (auto & dc : m_drawCalls)
-        {
-            m_tpPVar->setMat4f(dc.tp.ptr());
-            _pass->drawMesh(m_mesh, m_pipeline, dc.vertexOffset, dc.vertexCount, dc.mode);
-        }
-
-        if (bInternalPass)
-            m_renderDevice->endPass(_pass);
-
-        m_drawCalls.clear();
-    }
+    STICK_ASSERT(m_currentPass == nullptr);
+    m_currentPass = _pass;
 }
 
-void QuickDraw::flush()
+void QuickDraw::endPass()
 {
+    STICK_ASSERT(m_currentPass != nullptr);
     m_vertexBuffer->loadDataRaw((void *)m_geometryBuffer.ptr(),
                                 m_geometryBuffer.count() * sizeof(Vertex));
     m_geometryBuffer.clear();
+    m_currentPass = nullptr;
 }
+
+// void QuickDraw::draw(RenderPass * _pass)
+// {
+//     if (m_drawCalls.count())
+//     {
+//         bool bInternalPass = !_pass;
+
+//         if (bInternalPass)
+//             _pass = m_renderDevice->beginPass();
+
+//         _pass->setViewport(
+//             m_viewport.min().x, m_viewport.min().y, m_viewport.width(), m_viewport.height());
+
+//         // m_vertexBuffer->loadDataRaw((void *)m_geometryBuffer.ptr(),
+//         //                             m_geometryBuffer.count() * sizeof(Vertex));
+
+//         for (auto & dc : m_drawCalls)
+//         {
+//             m_tpPVar->setMat4f(dc.tp.ptr());
+//             _pass->drawMesh(m_mesh, m_pipeline, dc.vertexOffset, dc.vertexCount, dc.mode);
+//         }
+
+//         if (bInternalPass)
+//             m_renderDevice->endPass(_pass);
+
+//         m_drawCalls.clear();
+//     }
+// }
+
+// void QuickDraw::flush()
+// {
+//     m_vertexBuffer->loadDataRaw((void *)m_geometryBuffer.ptr(),
+//                                 m_geometryBuffer.count() * sizeof(Vertex));
+//     m_geometryBuffer.clear();
+// }
 
 void QuickDraw::rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
 {
+    STICK_ASSERT(m_currentPass);
+
     m_geometryBuffer.append({ Vec3f(_minX, _minY, 0), m_color });
     m_geometryBuffer.append({ Vec3f(_minX, _maxY, 0), m_color });
     m_geometryBuffer.append({ Vec3f(_maxX, _minY, 0), m_color });
     m_geometryBuffer.append({ Vec3f(_maxX, _maxY, 0), m_color });
-    m_drawCalls.append(
-        { m_geometryBuffer.count() - 4, 4, transformProjection(), VertexDrawMode::TriangleStrip });
+    // m_drawCalls.append(
+    //     { m_geometryBuffer.count() - 4, 4, transformProjection(), VertexDrawMode::TriangleStrip
+    //     });
+
+    setTransformProjectionForDrawCall();
+    m_currentPass->drawMesh(
+        m_mesh, m_pipeline, m_geometryBuffer.count() - 4, 4, VertexDrawMode::TriangleStrip);
 }
 
 void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
@@ -700,8 +707,12 @@ void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _m
     m_geometryBuffer.append({ Vec3f(_maxX, _minY, 0), m_color });
     m_geometryBuffer.append({ Vec3f(_maxX, _maxY, 0), m_color });
     m_geometryBuffer.append({ Vec3f(_minX, _maxY, 0), m_color });
-    m_drawCalls.append(
-        { m_geometryBuffer.count() - 4, 4, transformProjection(), VertexDrawMode::LineLoop });
+    // m_drawCalls.append(
+    //     { m_geometryBuffer.count() - 4, 4, transformProjection(), VertexDrawMode::LineLoop });
+
+    setTransformProjectionForDrawCall();
+    m_currentPass->drawMesh(
+        m_mesh, m_pipeline, m_geometryBuffer.count() - 4, 4, VertexDrawMode::LineLoop);
 }
 
 static void addToGeometryBuffer(QuickDraw::GeometryBuffer & _buff,
@@ -731,160 +742,116 @@ static void addToGeometryBuffer(QuickDraw::GeometryBuffer & _buff,
 }
 
 template <class T>
-static void addDrawCall(QuickDraw::DrawCallBuffer & _drawCalls,
-                        QuickDraw::GeometryBuffer & _geometryBuffer,
-                        const T * _ptr,
-                        Size _count,
-                        const Mat4f & _tp,
-                        const ColorRGBA & _col,
-                        VertexDrawMode _drawMode)
+void QuickDraw::addDrawCall(const T * _ptr,
+                            Size _count,
+                            const ColorRGBA & _col,
+                            VertexDrawMode _drawMode)
 {
-    Size voff = _geometryBuffer.count();
-    addToGeometryBuffer(_geometryBuffer, _ptr, _count, _col);
-    _drawCalls.append({ voff, _count, _tp, _drawMode });
+    STICK_ASSERT(m_currentPass);
+    Size voff = m_geometryBuffer.count();
+    addToGeometryBuffer(m_geometryBuffer, _ptr, _count, _col);
+    // _drawCalls.append({ voff, _count, _tp, _drawMode });
+
+    setTransformProjectionForDrawCall();
+    m_currentPass->drawMesh(m_mesh, m_pipeline, voff, _count, _drawMode);
 }
 
 void QuickDraw::lineStrip(const Vec2f * _ptr, Size _count, bool _bClosed)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
+    addDrawCall(_ptr,
                 _count,
-                transformProjection(),
                 m_color,
                 _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip);
 }
 
 void QuickDraw::lineStrip(const Vec3f * _ptr, Size _count, bool _bClosed)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
+    addDrawCall(_ptr,
                 _count,
-                transformProjection(),
                 m_color,
                 _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip);
 }
 
 void QuickDraw::lineStrip(const QuickDraw::Vertex * _ptr, Size _count, bool _bClosed)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
+    addDrawCall(_ptr,
                 _count,
-                transformProjection(),
                 m_color,
                 _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip);
 }
 
 void QuickDraw::lines(const Vec2f * _ptr, Size _count)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
-                _count,
-                transformProjection(),
-                m_color,
-                VertexDrawMode::Lines);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines);
 }
 
 void QuickDraw::lines(const Vec3f * _ptr, Size _count)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
-                _count,
-                transformProjection(),
-                m_color,
-                VertexDrawMode::Lines);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines);
 }
 
 void QuickDraw::lines(const Vertex * _ptr, Size _count)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
-                _count,
-                transformProjection(),
-                m_color,
-                VertexDrawMode::Lines);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines);
 }
 
 void QuickDraw::points(const Vec2f * _ptr, Size _count)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
-                _count,
-                transformProjection(),
-                m_color,
-                VertexDrawMode::Points);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points);
 }
 
 void QuickDraw::points(const Vec3f * _ptr, Size _count)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
-                _count,
-                transformProjection(),
-                m_color,
-                VertexDrawMode::Points);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points);
 }
 
 void QuickDraw::points(const Vertex * _ptr, Size _count)
 {
-    addDrawCall(m_drawCalls,
-                m_geometryBuffer,
-                _ptr,
-                _count,
-                transformProjection(),
-                m_color,
-                VertexDrawMode::Points);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points);
 }
 
 void QuickDraw::rects(const Vec2f * _points, Size _count, Float32 _radius)
 {
-    Size off = m_geometryBuffer.count();
-    Vec3f pos;
-    Vec3f tla(-_radius, -_radius);
-    Vec3f bla(-_radius, _radius);
-    Vec3f tra(_radius, -_radius);
-    Vec3f bra(_radius, _radius);
-    for (Size i = 0; i < _count; ++i)
-    {
-        pos = Vec3f(_points[i].x, _points[i].y, 0);
-        m_geometryBuffer.append({ pos + tla, m_color });
-        m_geometryBuffer.append({ pos + tra, m_color });
-        m_geometryBuffer.append({ pos + bla, m_color });
-        m_geometryBuffer.append({ pos + tra, m_color });
-        m_geometryBuffer.append({ pos + bra, m_color });
-        m_geometryBuffer.append({ pos + bla, m_color });
-    }
-    m_drawCalls.append({ off, _count * 6, transformProjection(), VertexDrawMode::Triangles });
+    // Size off = m_geometryBuffer.count();
+    // Vec3f pos;
+    // Vec3f tla(-_radius, -_radius);
+    // Vec3f bla(-_radius, _radius);
+    // Vec3f tra(_radius, -_radius);
+    // Vec3f bra(_radius, _radius);
+    // for (Size i = 0; i < _count; ++i)
+    // {
+    //     pos = Vec3f(_points[i].x, _points[i].y, 0);
+    //     m_geometryBuffer.append({ pos + tla, m_color });
+    //     m_geometryBuffer.append({ pos + tra, m_color });
+    //     m_geometryBuffer.append({ pos + bla, m_color });
+    //     m_geometryBuffer.append({ pos + tra, m_color });
+    //     m_geometryBuffer.append({ pos + bra, m_color });
+    //     m_geometryBuffer.append({ pos + bla, m_color });
+    // }
+    // m_drawCalls.append({ off, _count * 6, transformProjection(), VertexDrawMode::Triangles });
 }
 
 void QuickDraw::lineRects(const Vec2f * _points, Size _count, Float32 _radius)
 {
-    Size off = m_geometryBuffer.count();
-    Vec3f pos;
-    Vec3f tla(-_radius, -_radius);
-    Vec3f bla(-_radius, _radius);
-    Vec3f tra(_radius, -_radius);
-    Vec3f bra(_radius, _radius);
-    for (Size i = 0; i < _count; ++i)
-    {
-        pos = Vec3f(_points[i].x, _points[i].y, 0);
-        m_geometryBuffer.append({ pos + tla, m_color });
-        m_geometryBuffer.append({ pos + tra, m_color });
-        m_geometryBuffer.append({ pos + tra, m_color });
-        m_geometryBuffer.append({ pos + bra, m_color });
-        m_geometryBuffer.append({ pos + bra, m_color });
-        m_geometryBuffer.append({ pos + bla, m_color });
-        m_geometryBuffer.append({ pos + bla, m_color });
-        m_geometryBuffer.append({ pos + tla, m_color });
-    }
-    m_drawCalls.append({ off, _count * 8, transformProjection(), VertexDrawMode::Lines });
+    // Size off = m_geometryBuffer.count();
+    // Vec3f pos;
+    // Vec3f tla(-_radius, -_radius);
+    // Vec3f bla(-_radius, _radius);
+    // Vec3f tra(_radius, -_radius);
+    // Vec3f bra(_radius, _radius);
+    // for (Size i = 0; i < _count; ++i)
+    // {
+    //     pos = Vec3f(_points[i].x, _points[i].y, 0);
+    //     m_geometryBuffer.append({ pos + tla, m_color });
+    //     m_geometryBuffer.append({ pos + tra, m_color });
+    //     m_geometryBuffer.append({ pos + tra, m_color });
+    //     m_geometryBuffer.append({ pos + bra, m_color });
+    //     m_geometryBuffer.append({ pos + bra, m_color });
+    //     m_geometryBuffer.append({ pos + bla, m_color });
+    //     m_geometryBuffer.append({ pos + bla, m_color });
+    //     m_geometryBuffer.append({ pos + tla, m_color });
+    // }
+    // m_drawCalls.append({ off, _count * 8, transformProjection(), VertexDrawMode::Lines });
 }
 
 QuickDraw::GeometryBuffer & QuickDraw::geometryBuffer()
@@ -1015,7 +982,6 @@ Error RenderWindow::run()
         auto now = m_clock.now();
         Float64 dur = m_lastFrameTime ? (now - *m_lastFrameTime).seconds() : 1.0 / 60.0;
         luke::pollEvents();
-        m_renderDevice->beginFrame();
         Error err;
         if (m_gui)
         {
@@ -1084,12 +1050,6 @@ Error RenderWindow::run()
             if (err)
                 return err;
         }
-
-        m_quickDraw.draw();
-        m_quickDraw.flush();
-        err = m_renderDevice->endFrame();
-        if (err)
-            return err;
 
         // update the fps calculation
         Float64 fps = 1.0 / dur;
