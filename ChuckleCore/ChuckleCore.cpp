@@ -661,8 +661,8 @@ void QuickDraw::draw(RenderPass * _pass)
         _pass->setViewport(
             m_viewport.min().x, m_viewport.min().y, m_viewport.width(), m_viewport.height());
 
-        m_vertexBuffer->loadDataRaw((void *)m_geometryBuffer.ptr(),
-                                    m_geometryBuffer.count() * sizeof(Vertex));
+        // m_vertexBuffer->loadDataRaw((void *)m_geometryBuffer.ptr(),
+        //                             m_geometryBuffer.count() * sizeof(Vertex));
 
         for (auto & dc : m_drawCalls)
         {
