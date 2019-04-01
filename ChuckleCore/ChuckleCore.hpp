@@ -198,7 +198,29 @@ class STICK_API RenderWindow : public Window
     ImGuiInterface * imGuiInterface();
     QuickDraw & quickDraw();
 
+    void drawPathOutline(Path * _path, RenderInterface & _paperRenderer, const ColorRGBA & _col, bool _bDrawChildren = true);
+    void drawMultiplePathOutlines(Path ** _paths,
+                                  Size _count,
+                                  RenderInterface & _paperRenderer,
+                                  const ColorRGBA & _col,
+                                  bool _bDrawChildren = true);
+    void drawPathHandles(Path * _path,
+                         const ColorRGBA & _col,
+                         Float32 _radius = 2,
+                         bool _bDrawChildren = true);
+    void drawMultiplePathHandles(Path ** _paths,
+                                 Size _count,
+                                 const ColorRGBA & _col,
+                                 Float32 _radius = 2,
+                                 bool _bDrawChildren = true);
+    void drawItemBoundingBox(Item * _item, const ColorRGBA & _col, bool _bDrawChildren = false);
+    void drawMultipleItemBoundingBoxes(Item ** _items,
+                                       Size _count,
+                                       const ColorRGBA & _col,
+                                       bool _bDrawChildren = false);
+
   protected:
+    void drawPathOutlineHelper(Path * _path, RenderInterface & _paperRenderer, bool _bDrawChildren);
     void updateQuickDrawSize();
 
     RenderDevice * m_renderDevice;
@@ -230,31 +252,14 @@ class STICK_API PaperWindow : public RenderWindow
 
     void setAutoResize(bool _b);
     bool autoResize() const;
-
     void drawDocument(RenderPass * _pass);
-
     void drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bDrawChildren = true);
     void drawMultiplePathOutlines(Path ** _paths,
                                   Size _count,
                                   const ColorRGBA & _col,
                                   bool _bDrawChildren = true);
-    void drawPathHandles(Path * _path,
-                         const ColorRGBA & _col,
-                         Float32 _radius = 2,
-                         bool _bDrawChildren = true);
-    void drawMultiplePathHandles(Path ** _paths,
-                                 Size _count,
-                                 const ColorRGBA & _col,
-                                 Float32 _radius = 2,
-                                 bool _bDrawChildren = true);
-    void drawItemBoundingBox(Item * _item, const ColorRGBA & _col, bool _bDrawChildren = false);
-    void drawMultipleItemBoundingBoxes(Item ** _items,
-                                       Size _count,
-                                       const ColorRGBA & _col,
-                                       bool _bDrawChildren = false);
 
   protected:
-    void drawPathOutlineHelper(Path * _path, bool _bDrawChildren);
     void updateDocumentSize();
 
     Document m_doc;

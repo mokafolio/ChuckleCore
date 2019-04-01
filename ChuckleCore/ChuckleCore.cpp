@@ -456,15 +456,15 @@ Error ImGuiInterface::finalizeFrame(RenderPass * _pass)
             {
                 m_pipeTex->set((Texture *)(intptr_t)pcmd->TextureId, m_sampler);
                 _pass->setScissor((int)pcmd->ClipRect.x,
-                                 (int)(fb_height - pcmd->ClipRect.w),
-                                 (int)(pcmd->ClipRect.z - pcmd->ClipRect.x),
-                                 (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
+                                  (int)(fb_height - pcmd->ClipRect.w),
+                                  (int)(pcmd->ClipRect.z - pcmd->ClipRect.x),
+                                  (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
                 _pass->drawMesh(m_mesh,
-                               m_pipeline,
-                               idxOffset,
-                               pcmd->ElemCount,
-                               vtxOffset,
-                               VertexDrawMode::Triangles);
+                                m_pipeline,
+                                idxOffset,
+                                pcmd->ElemCount,
+                                vtxOffset,
+                                VertexDrawMode::Triangles);
             }
             idxOffset += pcmd->ElemCount;
         }
@@ -1101,6 +1101,136 @@ QuickDraw & RenderWindow::quickDraw()
     return m_quickDraw;
 }
 
+void RenderWindow::drawPathOutlineHelper(Path * _path,
+                                         RenderInterface & _paperRenderer,
+                                         bool _bDrawChildren)
+{
+    Vec2f * verts;
+    Size count;
+    _paperRenderer.flattenedPathVertices(_path, &verts, &count, _path->absoluteTransform());
+    quickDraw().lineStrip(verts, count, _path->isClosed());
+    if (_bDrawChildren)
+    {
+        for (Item * child : _path->children())
+            drawPathOutlineHelper(static_cast<Path *>(child), _paperRenderer, _bDrawChildren);
+    }
+}
+
+void RenderWindow::drawPathOutline(Path * _path,
+                                   RenderInterface & _paperRenderer,
+                                   const ColorRGBA & _col,
+                                   bool _bDrawChildren)
+{
+    quickDraw().setTransform(_path->absoluteTransform());
+    quickDraw().setColor(_col);
+    drawPathOutlineHelper(_path, _paperRenderer, _bDrawChildren);
+}
+
+void RenderWindow::drawMultiplePathOutlines(Path ** _paths,
+                                            Size _count,
+                                            RenderInterface & _paperRenderer,
+                                            const ColorRGBA & _col,
+                                            bool _bDrawChildren)
+{
+    for (Size i = 0; i < _count; ++i)
+        drawPathOutline(_paths[i], _paperRenderer, _col, _bDrawChildren);
+}
+
+static void _addHandleDrawData(Path * _path,
+                               DynamicArray<Vec2f> & _outPositions,
+                               DynamicArray<Vec2f> & _outLines,
+                               bool _bDrawChildren)
+{
+    const Mat32f & absTrans = _path->absoluteTransform();
+    for (auto seg : _path->segments())
+    {
+        const Vec2f & a = absTrans * seg.handleInAbsolute();
+        const Vec2f & b = absTrans * seg.handleOutAbsolute();
+        const Vec2f & c = absTrans * seg.position();
+
+        _outPositions.append(a);
+        _outPositions.append(b);
+        _outLines.append(c);
+        _outLines.append(a);
+        _outLines.append(c);
+        _outLines.append(b);
+    }
+
+    if (_bDrawChildren)
+    {
+        for (Item * child : _path->children())
+            _addHandleDrawData(
+                static_cast<Path *>(child), _outPositions, _outLines, _bDrawChildren);
+    }
+}
+
+void RenderWindow::drawPathHandles(Path * _path,
+                                   const ColorRGBA & _col,
+                                   Float32 _radius,
+                                   bool _bDrawChildren)
+{
+    drawMultiplePathHandles(&_path, 1, _col, _radius, _bDrawChildren);
+}
+
+void RenderWindow::drawMultiplePathHandles(
+    Path ** _paths, Size _count, const ColorRGBA & _col, Float32 _radius, bool _bDrawChildren)
+{
+    //@TODO: put the buffer into either paperwindow or quickdraw
+    DynamicArray<Vec2f> rects;
+    rects.reserve(_count * 16);
+    DynamicArray<Vec2f> lines;
+    lines.reserve(_count * 32);
+    for (Size i = 0; i < _count; ++i)
+        _addHandleDrawData(_paths[i], rects, lines, _bDrawChildren);
+    quickDraw().setTransform(Mat4f::identity());
+    quickDraw().setColor(_col);
+    quickDraw().lines(&lines[0], lines.count());
+    quickDraw().rects(&rects[0], rects.count(), _radius);
+}
+
+static void _drawBoundingBoxHelper(Item * _item,
+                                   const ColorRGBA & _col,
+                                   bool _bDrawChildren,
+                                   DynamicArray<QuickDraw::Vertex> & _outVerts)
+{
+    const Rectf & bounds = _item->bounds();
+    _outVerts.append({ Vec3f(bounds.min().x, bounds.min().y, 0), _col });
+    _outVerts.append({ Vec3f(bounds.max().x, bounds.min().y, 0), _col });
+    _outVerts.append({ Vec3f(bounds.max().x, bounds.min().y, 0), _col });
+    _outVerts.append({ Vec3f(bounds.max().x, bounds.max().y, 0), _col });
+    _outVerts.append({ Vec3f(bounds.max().x, bounds.max().y, 0), _col });
+    _outVerts.append({ Vec3f(bounds.min().x, bounds.max().y, 0), _col });
+    _outVerts.append({ Vec3f(bounds.min().x, bounds.max().y, 0), _col });
+    _outVerts.append({ Vec3f(bounds.min().x, bounds.min().y, 0), _col });
+    if (_bDrawChildren)
+    {
+        for (Item * child : _item->children())
+            _drawBoundingBoxHelper(child, _col, _bDrawChildren, _outVerts);
+    }
+}
+
+void RenderWindow::drawItemBoundingBox(Item * _item, const ColorRGBA & _col, bool _bDrawChildren)
+{
+    DynamicArray<QuickDraw::Vertex> vertices;
+    vertices.reserve(8);
+    _drawBoundingBoxHelper(_item, _col, _bDrawChildren, vertices);
+    quickDraw().setTransform(Mat4f::identity());
+    quickDraw().lines(&vertices[0], vertices.count());
+}
+
+void RenderWindow::drawMultipleItemBoundingBoxes(Item ** _items,
+                                                 Size _count,
+                                                 const ColorRGBA & _col,
+                                                 bool _bDrawChildren)
+{
+    DynamicArray<QuickDraw::Vertex> vertices;
+    vertices.reserve(_count * 8);
+    for (Size i = 0; i < _count; ++i)
+        _drawBoundingBoxHelper(_items[i], _col, _bDrawChildren, vertices);
+    quickDraw().setTransform(Mat4f::identity());
+    quickDraw().lines(&vertices[0], vertices.count());
+}
+
 PaperWindow::PaperWindow() : m_bAutoResize(true)
 {
 }
@@ -1156,128 +1286,17 @@ void PaperWindow::drawDocument(RenderPass * _pass)
     _pass->drawCustom([this] { return m_paperRenderer.draw(); });
 }
 
-void PaperWindow::drawPathOutlineHelper(Path * _path, bool _bDrawChildren)
-{
-    Vec2f * verts;
-    Size count;
-    paperRenderer().flattenedPathVertices(_path, &verts, &count, _path->absoluteTransform());
-    quickDraw().lineStrip(verts, count, _path->isClosed());
-    if (_bDrawChildren)
-    {
-        for (Item * child : _path->children())
-            drawPathOutlineHelper(static_cast<Path *>(child), _bDrawChildren);
-    }
-}
-
 void PaperWindow::drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bDrawChildren)
 {
-    quickDraw().setTransform(_path->absoluteTransform());
-    quickDraw().setColor(_col);
-    drawPathOutlineHelper(_path, _bDrawChildren);
+    RenderWindow::drawPathOutline(_path, m_paperRenderer, _col, _bDrawChildren);
 }
 
 void PaperWindow::drawMultiplePathOutlines(Path ** _paths,
-                                           Size _count,
-                                           const ColorRGBA & _col,
-                                           bool _bDrawChildren)
+                              Size _count,
+                              const ColorRGBA & _col,
+                              bool _bDrawChildren)
 {
-    for (Size i = 0; i < _count; ++i)
-        drawPathOutline(_paths[i], _col, _bDrawChildren);
-}
-
-static void _addHandleDrawData(Path * _path,
-                               DynamicArray<Vec2f> & _outPositions,
-                               DynamicArray<Vec2f> & _outLines,
-                               bool _bDrawChildren)
-{
-    const Mat32f & absTrans = _path->absoluteTransform();
-    for (auto seg : _path->segments())
-    {
-        const Vec2f & a = absTrans * seg.handleInAbsolute();
-        const Vec2f & b = absTrans * seg.handleOutAbsolute();
-        const Vec2f & c = absTrans * seg.position();
-
-        _outPositions.append(a);
-        _outPositions.append(b);
-        _outLines.append(c);
-        _outLines.append(a);
-        _outLines.append(c);
-        _outLines.append(b);
-    }
-
-    if (_bDrawChildren)
-    {
-        for (Item * child : _path->children())
-            _addHandleDrawData(
-                static_cast<Path *>(child), _outPositions, _outLines, _bDrawChildren);
-    }
-}
-
-void PaperWindow::drawPathHandles(Path * _path,
-                                  const ColorRGBA & _col,
-                                  Float32 _radius,
-                                  bool _bDrawChildren)
-{
-    drawMultiplePathHandles(&_path, 1, _col, _radius, _bDrawChildren);
-}
-
-void PaperWindow::drawMultiplePathHandles(
-    Path ** _paths, Size _count, const ColorRGBA & _col, Float32 _radius, bool _bDrawChildren)
-{
-    //@TODO: put the buffer into either paperwindow or quickdraw
-    DynamicArray<Vec2f> rects;
-    rects.reserve(_count * 16);
-    DynamicArray<Vec2f> lines;
-    lines.reserve(_count * 32);
-    for (Size i = 0; i < _count; ++i)
-        _addHandleDrawData(_paths[i], rects, lines, _bDrawChildren);
-    quickDraw().setTransform(Mat4f::identity());
-    quickDraw().setColor(_col);
-    quickDraw().lines(&lines[0], lines.count());
-    quickDraw().rects(&rects[0], rects.count(), _radius);
-}
-
-static void _drawBoundingBoxHelper(Item * _item,
-                                   const ColorRGBA & _col,
-                                   bool _bDrawChildren,
-                                   DynamicArray<QuickDraw::Vertex> & _outVerts)
-{
-    const Rectf & bounds = _item->bounds();
-    _outVerts.append({ Vec3f(bounds.min().x, bounds.min().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.max().x, bounds.min().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.max().x, bounds.min().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.max().x, bounds.max().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.max().x, bounds.max().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.min().x, bounds.max().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.min().x, bounds.max().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.min().x, bounds.min().y, 0), _col });
-    if (_bDrawChildren)
-    {
-        for (Item * child : _item->children())
-            _drawBoundingBoxHelper(child, _col, _bDrawChildren, _outVerts);
-    }
-}
-
-void PaperWindow::drawItemBoundingBox(Item * _item, const ColorRGBA & _col, bool _bDrawChildren)
-{
-    DynamicArray<QuickDraw::Vertex> vertices;
-    vertices.reserve(8);
-    _drawBoundingBoxHelper(_item, _col, _bDrawChildren, vertices);
-    quickDraw().setTransform(Mat4f::identity());
-    quickDraw().lines(&vertices[0], vertices.count());
-}
-
-void PaperWindow::drawMultipleItemBoundingBoxes(Item ** _items,
-                                                Size _count,
-                                                const ColorRGBA & _col,
-                                                bool _bDrawChildren)
-{
-    DynamicArray<QuickDraw::Vertex> vertices;
-    vertices.reserve(_count * 8);
-    for (Size i = 0; i < _count; ++i)
-        _drawBoundingBoxHelper(_items[i], _col, _bDrawChildren, vertices);
-    quickDraw().setTransform(Mat4f::identity());
-    quickDraw().lines(&vertices[0], vertices.count());
+    RenderWindow::drawMultiplePathOutlines(_paths, _count, m_paperRenderer, _col, _bDrawChildren);
 }
 
 namespace path
