@@ -1,4 +1,4 @@
-project('ChuckleCore', ['cpp', 'c'], default_options : ['cpp_std=c++14'])
+project('ChuckleCore', ['cpp', 'c', 'objcpp'], default_options : ['cpp_std=c++14'])
 
 add_project_arguments('-Wno-missing-braces', '-fno-exceptions', language: 'cpp')
 
@@ -40,6 +40,11 @@ chuckleCoreSrc = [
     'ChuckleCore/Libs/imgui/imgui_widgets.cpp',
     'ChuckleCore/Libs/whereami/whereami.c'
 ]
+
+if host_machine.system() == 'darwin'
+    chuckleCoreSrc += 'ChuckleCore/Private/noc_file_dialog_osx.mm'
+    deps += dependency('appKit')
+endif
 
 chuckleCore = library('ChuckleCore', 
     chuckleCoreSrc, 

@@ -1,5 +1,6 @@
 #include <ChuckleCore/ChuckleCore.hpp>
 #include <whereami.h>
+#include <ChuckleCore/Libs/noc/noc_file_dialog.h>
 
 namespace chuckle
 {
@@ -1292,9 +1293,9 @@ void PaperWindow::drawPathOutline(Path * _path, const ColorRGBA & _col, bool _bD
 }
 
 void PaperWindow::drawMultiplePathOutlines(Path ** _paths,
-                              Size _count,
-                              const ColorRGBA & _col,
-                              bool _bDrawChildren)
+                                           Size _count,
+                                           const ColorRGBA & _col,
+                                           bool _bDrawChildren)
 {
     RenderWindow::drawMultiplePathOutlines(_paths, _count, m_paperRenderer, _col, _bDrawChildren);
 }
@@ -1386,5 +1387,26 @@ void morph(Path * _a, Path * _b, Float32 _t, Path * _output)
         _output->closePath();
 }
 } // namespace path
+
+stick::Maybe<const char *> fileDialog(FileDialogFlags _flags,
+                                      const char * _filters,
+                                      const char * _defaultPath,
+                                      const char * _defaultName)
+{
+    int flags = 0;
+    if ((_flags & FileDialogFlags::Open) == FileDialogFlags::Open)
+        flags |= NOC_FILE_DIALOG_OPEN;
+    if ((_flags & FileDialogFlags::Save) == FileDialogFlags::Save)
+        flags |= NOC_FILE_DIALOG_SAVE;
+    if ((_flags & FileDialogFlags::Directory) == FileDialogFlags::Directory)
+        flags |= NOC_FILE_DIALOG_DIR;
+    if ((_flags & FileDialogFlags::OverwriteConfirmation) == FileDialogFlags::OverwriteConfirmation)
+        flags |= NOC_FILE_DIALOG_OVERWRITE_CONFIRMATION;
+
+    const char * res = noc_file_dialog_open(flags, _filters, _defaultPath, _defaultName);
+    if (res)
+        return res;
+    return stick::Maybe<const char *>();
+}
 
 } // namespace chuckle

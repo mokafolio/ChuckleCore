@@ -26,6 +26,16 @@ using namespace luke;
 using namespace dab;
 using namespace pic;
 
+STICK_API_ENUM_CLASS(FileDialogFlags){ Open = 1 << 0,      // Create an open file dialog.
+                                       Save = 1 << 1,      // Create a save file dialog.
+                                       Directory = 1 << 2, // Open a directory.
+                                       OverwriteConfirmation = 1 << 3 };
+
+static constexpr bool enableBitmaskOperators(FileDialogFlags)
+{
+    return true;
+}
+
 STICK_API PerlinNoise & noiseInstance();
 STICK_API Randomizer & randomizerInstance();
 
@@ -45,6 +55,11 @@ STICK_API Float32 noise(Float32 _x, Float32 _y, Float32 _z, Float32 _w);
 
 STICK_API String executablePath(Allocator & _alloc = defaultAllocator());
 STICK_API String executableDirectoryName(Allocator & _alloc = defaultAllocator());
+
+STICK_API stick::Maybe<const char *> fileDialog(FileDialogFlags _flags,
+                                                const char * _filters = NULL,
+                                                const char * _defaultPath = NULL,
+                                                const char * _defaultName = NULL);
 
 class STICK_API ImGuiInterface : public stick::EventForwarder
 {
@@ -125,8 +140,10 @@ class STICK_API QuickDraw
     const Mat4f & projection() const;
     const Mat4f & transformProjection() const;
 
-    void addToPass(RenderPass * _pass); //will queue the currently buffered draw commands on the provided pass
-    void flush(); //should be called once per frame just before any renderpass that has been submitted too is finalized
+    void addToPass(
+        RenderPass * _pass); // will queue the currently buffered draw commands on the provided pass
+    void flush(); // should be called once per frame just before any renderpass that has been
+                  // submitted too is finalized
 
     void rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
     void lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
@@ -150,7 +167,6 @@ class STICK_API QuickDraw
     DrawCallBuffer & drawCalls();
 
   private:
-
     template <class T>
     void addDrawCall(const T *, Size, const ColorRGBA &, VertexDrawMode);
 
@@ -198,7 +214,10 @@ class STICK_API RenderWindow : public Window
     ImGuiInterface * imGuiInterface();
     QuickDraw & quickDraw();
 
-    void drawPathOutline(Path * _path, RenderInterface & _paperRenderer, const ColorRGBA & _col, bool _bDrawChildren = true);
+    void drawPathOutline(Path * _path,
+                         RenderInterface & _paperRenderer,
+                         const ColorRGBA & _col,
+                         bool _bDrawChildren = true);
     void drawMultiplePathOutlines(Path ** _paths,
                                   Size _count,
                                   RenderInterface & _paperRenderer,
