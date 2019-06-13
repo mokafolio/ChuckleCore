@@ -1,2 +1,3 @@
 option('buildSubmodules', type : 'boolean', value : true, yield : true)
 option('buildExamples', type : 'boolean', value : true)
+option('forceSharedLibrary', type : 'boolean', value : false, yield : true)

@@ -46,11 +46,19 @@ if host_machine.system() == 'darwin'
     deps += dependency('appKit')
 endif
 
-chuckleCore = library('ChuckleCore', 
-    chuckleCoreSrc, 
-    dependencies: deps, 
-    include_directories : incDirs, 
-    install: meson.is_subproject() == false)
+if get_option('forceSharedLibrary')
+    chuckleCore = shared_library('ChuckleCore', 
+        chuckleCoreSrc, 
+        dependencies: deps, 
+        include_directories : incDirs, 
+        install: meson.is_subproject() == false)
+else
+    chuckleCore = library('ChuckleCore', 
+        chuckleCoreSrc, 
+        dependencies: deps, 
+        include_directories : incDirs, 
+        install: meson.is_subproject() == false)
+endif
 
 chuckleCoreDep = declare_dependency(link_with : chuckleCore, 
     dependencies: deps, 
