@@ -28,7 +28,7 @@ chuckleCoreInc = [
     'ChuckleCore/ChuckleCore.hpp'
 ]
 
-if meson.is_subproject() == false
+if meson.is_subproject() == false or get_option('forceSharedLibrary')
     install_headers(chuckleCoreInc)
 endif
 
@@ -51,7 +51,7 @@ if get_option('forceSharedLibrary')
         chuckleCoreSrc, 
         dependencies: deps, 
         include_directories : incDirs, 
-        install: meson.is_subproject() == false)
+        install: true)
 else
     chuckleCore = library('ChuckleCore', 
         chuckleCoreSrc, 
