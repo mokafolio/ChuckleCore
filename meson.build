@@ -29,7 +29,7 @@ chuckleCoreInc = [
 ]
 
 if meson.is_subproject() == false or get_option('forceInstallHeaders')
-    install_headers(chuckleCoreInc)
+    install_headers(chuckleCoreInc, subdir: 'ChuckleCore')
 endif
 
 chuckleCoreSrc = [
