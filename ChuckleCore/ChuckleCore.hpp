@@ -27,6 +27,9 @@ using namespace luke;
 using namespace dab;
 using namespace pic;
 
+//to resolve ambiguity between crunch::LineSegment and paper::LineSegment
+using LineSegment = paper::LineSegment;
+
 STICK_API_ENUM_CLASS(FileDialogFlags){ Open = 1 << 0,      // Create an open file dialog.
                                        Save = 1 << 1,      // Create a save file dialog.
                                        Directory = 1 << 2, // Open a directory.
