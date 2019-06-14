@@ -30,6 +30,12 @@ chuckleCoreInc = [
 
 if meson.is_subproject() == false or get_option('forceInstallHeaders')
     install_headers(chuckleCoreInc, subdir: 'ChuckleCore')
+    install_headers(['ChuckleCore/Libs/imgui/imconfig.h',
+        'ChuckleCore/Libs/imgui/imgui.h',
+        'ChuckleCore/Libs/imgui/imgui_internal.h',
+        'ChuckleCore/Libs/imgui/imgui_rectpack.h',
+        'ChuckleCore/Libs/imgui/imgui_textedit.h',
+        'ChuckleCore/Libs/imgui/imgui_truetype.h'], subdir: 'ChuckleCore/Libs/imgui')
 endif
 
 chuckleCoreSrc = [
