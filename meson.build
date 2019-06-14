@@ -28,7 +28,7 @@ chuckleCoreInc = [
     'ChuckleCore/ChuckleCore.hpp'
 ]
 
-if meson.is_subproject() == false
+if meson.is_subproject() == false or get_option('forceInstallHeaders')
     install_headers(chuckleCoreInc)
 endif
 
@@ -46,12 +46,12 @@ if host_machine.system() == 'darwin'
     deps += dependency('appKit')
 endif
 
-if get_option('forceSharedLibrary')
+if get_option('forceSharedLibrary') == true
     chuckleCore = shared_library('ChuckleCore', 
         chuckleCoreSrc, 
         dependencies: deps, 
         include_directories : incDirs, 
-        install: meson.is_subproject() == false)
+        install: true)
 else
     chuckleCore = library('ChuckleCore', 
         chuckleCoreSrc, 
