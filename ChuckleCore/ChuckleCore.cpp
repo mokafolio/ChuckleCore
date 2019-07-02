@@ -493,7 +493,7 @@ static void addToGeometryBuffer(QuickDraw::GeometryBuffer & _buff,
                                 const ColorRGBA & _col)
 {
     for (Size i = 0; i < _count; ++i)
-        _addVertex(_buff, { Vec3f(_ptr[i].x, _ptr[i].y, 0), _col });
+        _addVertex(_buff, { Vec3f(_ptr[i].x, _ptr[i].y, 0), _col, Vec2f(0) });
 }
 
 static void addToGeometryBuffer(QuickDraw::GeometryBuffer & _buff,
@@ -502,7 +502,7 @@ static void addToGeometryBuffer(QuickDraw::GeometryBuffer & _buff,
                                 const ColorRGBA & _col)
 {
     for (Size i = 0; i < _count; ++i)
-        _addVertex(_buff, { _ptr[i], _col });
+        _addVertex(_buff, { _ptr[i], _col, Vec2f(0) });
 }
 
 static void addToGeometryBuffer(QuickDraw::GeometryBuffer & _buff,
@@ -1286,14 +1286,14 @@ static void _drawBoundingBoxHelper(Item * _item,
                                    DynamicArray<QuickDraw::Vertex> & _outVerts)
 {
     const Rectf & bounds = _item->bounds();
-    _outVerts.append({ Vec3f(bounds.min().x, bounds.min().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.max().x, bounds.min().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.max().x, bounds.min().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.max().x, bounds.max().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.max().x, bounds.max().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.min().x, bounds.max().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.min().x, bounds.max().y, 0), _col });
-    _outVerts.append({ Vec3f(bounds.min().x, bounds.min().y, 0), _col });
+    _outVerts.append({ Vec3f(bounds.min().x, bounds.min().y, 0), _col, Vec2f(0) });
+    _outVerts.append({ Vec3f(bounds.max().x, bounds.min().y, 0), _col, Vec2f(0) });
+    _outVerts.append({ Vec3f(bounds.max().x, bounds.min().y, 0), _col, Vec2f(0) });
+    _outVerts.append({ Vec3f(bounds.max().x, bounds.max().y, 0), _col, Vec2f(0) });
+    _outVerts.append({ Vec3f(bounds.max().x, bounds.max().y, 0), _col, Vec2f(0) });
+    _outVerts.append({ Vec3f(bounds.min().x, bounds.max().y, 0), _col, Vec2f(0) });
+    _outVerts.append({ Vec3f(bounds.min().x, bounds.max().y, 0), _col, Vec2f(0) });
+    _outVerts.append({ Vec3f(bounds.min().x, bounds.min().y, 0), _col, Vec2f(0) });
     if (_bDrawChildren)
     {
         for (Item * child : _item->children())
