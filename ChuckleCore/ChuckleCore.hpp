@@ -108,6 +108,7 @@ class STICK_API QuickDraw
     {
         Vec3f vertex;
         ColorRGBA color;
+        Vec2f tc;
     };
 
     using MatrixStack = stick::DynamicArray<Mat4f>;
@@ -119,6 +120,7 @@ class STICK_API QuickDraw
         Size vertexCount;
         Mat4f tp;
         VertexDrawMode mode;
+        Texture * texture;
     };
 
     using DrawCallBuffer = stick::DynamicArray<DrawCall>;
@@ -167,12 +169,14 @@ class STICK_API QuickDraw
     void rects(const Vec2f * _points, Size _count, Float32 _radius);
     void lineRects(const Vec2f * _points, Size _count, Float32 _radius);
 
-    GeometryBuffer & geometryBuffer();
+    void drawVertices(const Vertex * _vertices, Size _count, VertexDrawMode _mode, Texture * _tex = nullptr);
+
+    // GeometryBuffer & geometryBuffer();
     DrawCallBuffer & drawCalls();
 
   private:
     template <class T>
-    void addDrawCall(const T *, Size, const ColorRGBA &, VertexDrawMode);
+    void addDrawCall(const T *, Size, const ColorRGBA &, VertexDrawMode, Texture *);
 
     RenderDevice * m_renderDevice;
     MatrixStack m_transformStack;
@@ -185,7 +189,10 @@ class STICK_API QuickDraw
 
     Program * m_program;
     Pipeline * m_pipeline;
+    Texture * m_whiteTex; //default texture used if no other one is bound
+    Sampler * m_sampler;
     PipelineVariable * m_tpPVar;
+    PipelineTexture * m_pipeTex;
     // PipelineTexture * m_pipeTex;
     VertexBuffer * m_vertexBuffer;
     Mesh * m_mesh;
