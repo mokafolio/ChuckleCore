@@ -588,7 +588,7 @@ Error QuickDraw::init(RenderDevice * _rd, Allocator & _alloc)
     else
         return res.error();
 
-    UInt8 whitePixel[4] = {255};
+    UInt8 whitePixel[4] = { 255 };
     m_whiteTex->loadPixels(1, 1, 1, &whitePixel, DataType::UInt8, TextureFormat::RGBA8);
 
     m_tpPVar = m_pipeline->variable("transformProjection");
@@ -702,7 +702,7 @@ void QuickDraw::addToPass(RenderPass * _pass)
         for (auto & dc : m_drawCalls)
         {
             m_tpPVar->setMat4f(dc.tp.ptr());
-            if(lastTex != dc.texture)
+            if (lastTex != dc.texture)
                 m_pipeTex->set(dc.texture, m_sampler);
             _pass->drawMesh(m_mesh, m_pipeline, dc.vertexOffset, dc.vertexCount, dc.mode);
             lastTex = dc.texture;
@@ -712,7 +712,10 @@ void QuickDraw::addToPass(RenderPass * _pass)
     }
 }
 
-void QuickDraw::drawVertices(const Vertex * _vertices, Size _count, VertexDrawMode _mode, Texture * _tex)
+void QuickDraw::drawVertices(const Vertex * _vertices,
+                             Size _count,
+                             VertexDrawMode _mode,
+                             Texture * _tex)
 {
     addDrawCall(_vertices, _count, ColorRGBA(), _mode, _tex);
 }
@@ -789,8 +792,11 @@ void QuickDraw::rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
     _addVertex(m_geometryBuffer, { Vec3f(_maxX, _minY, 0), m_color });
     _addVertex(m_geometryBuffer, { Vec3f(_maxX, _maxY, 0), m_color });
 
-    m_drawCalls.append(
-        { m_geometryBuffer.count() - 4, 4, transformProjection(), VertexDrawMode::TriangleStrip, m_whiteTex });
+    m_drawCalls.append({ m_geometryBuffer.count() - 4,
+                         4,
+                         transformProjection(),
+                         VertexDrawMode::TriangleStrip,
+                         m_whiteTex });
 
     // setTransformProjectionForDrawCall();
     // m_currentPass->drawMesh(
@@ -809,8 +815,11 @@ void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _m
     _addVertex(m_geometryBuffer, { Vec3f(_maxX, _maxY, 0), m_color });
     _addVertex(m_geometryBuffer, { Vec3f(_minX, _maxY, 0), m_color });
 
-    m_drawCalls.append(
-        { m_geometryBuffer.count() - 4, 4, transformProjection(), VertexDrawMode::LineLoop, m_whiteTex });
+    m_drawCalls.append({ m_geometryBuffer.count() - 4,
+                         4,
+                         transformProjection(),
+                         VertexDrawMode::LineLoop,
+                         m_whiteTex });
 
     // setTransformProjectionForDrawCall();
     // m_currentPass->drawMesh(
@@ -818,11 +827,8 @@ void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _m
 }
 
 template <class T>
-void QuickDraw::addDrawCall(const T * _ptr,
-                            Size _count,
-                            const ColorRGBA & _col,
-                            VertexDrawMode _drawMode,
-                            Texture * _tex)
+void QuickDraw::addDrawCall(
+    const T * _ptr, Size _count, const ColorRGBA & _col, VertexDrawMode _drawMode, Texture * _tex)
 {
     Size voff = m_geometryBuffer.count();
     addToGeometryBuffer(m_geometryBuffer, _ptr, _count, _col);
@@ -906,12 +912,12 @@ void QuickDraw::rects(const Vec2f * _points, Size _count, Float32 _radius)
         // m_geometryBuffer.append({ pos + tra, m_color });
         // m_geometryBuffer.append({ pos + bra, m_color });
         // m_geometryBuffer.append({ pos + bla, m_color });
-        _addVertex(m_geometryBuffer, { pos + tla, m_color });
-        _addVertex(m_geometryBuffer, { pos + tra, m_color });
-        _addVertex(m_geometryBuffer, { pos + bla, m_color });
-        _addVertex(m_geometryBuffer, { pos + tra, m_color });
-        _addVertex(m_geometryBuffer, { pos + bra, m_color });
-        _addVertex(m_geometryBuffer, { pos + bla, m_color });
+        _addVertex(m_geometryBuffer, { pos + tla, m_color, Vec2f(0) });
+        _addVertex(m_geometryBuffer, { pos + tra, m_color, Vec2f(0) });
+        _addVertex(m_geometryBuffer, { pos + bla, m_color, Vec2f(0) });
+        _addVertex(m_geometryBuffer, { pos + tra, m_color, Vec2f(0) });
+        _addVertex(m_geometryBuffer, { pos + bra, m_color, Vec2f(0) });
+        _addVertex(m_geometryBuffer, { pos + bla, m_color, Vec2f(0) });
     }
     m_drawCalls.append(
         { off, _count * 6, transformProjection(), VertexDrawMode::Triangles, m_whiteTex });
