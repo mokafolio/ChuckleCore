@@ -1,4 +1,8 @@
-project('ChuckleCore', ['cpp', 'c', 'objcpp'], default_options : ['cpp_std=c++14'])
+project('ChuckleCore', ['cpp', 'c'], default_options : ['cpp_std=c++14'])
+
+if build_machine.system()=='darwin'
+  add_languages(['objcpp'])
+endif
 
 add_project_arguments('-Wno-missing-braces', '-fno-exceptions', language: 'cpp')
 
@@ -50,6 +54,8 @@ chuckleCoreSrc = [
 if host_machine.system() == 'darwin'
     chuckleCoreSrc += 'ChuckleCore/Private/noc_file_dialog_osx.mm'
     deps += dependency('appKit')
+elif host_machine.system() == 'linux'
+    deps += dependency('gtk+-3.0')
 endif
 
 if get_option('forceSharedLibrary') == true

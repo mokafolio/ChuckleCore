@@ -1,5 +1,12 @@
 #include <ChuckleCore/ChuckleCore.hpp>
+#if STICK_PLATFORM == STICK_PLATFORM_OSX
 #include <ChuckleCore/Libs/noc/noc_file_dialog.h>
+#elif STICK_PLATFORM == STICK_PLATFORM_LINUX
+#define NOC_FILE_DIALOG_GTK
+#define NOC_FILE_DIALOG_IMPLEMENTATION
+#include <ChuckleCore/Libs/noc/noc_file_dialog.h>
+#endif
+
 #include <whereami.h>
 
 namespace chuckle
@@ -136,10 +143,8 @@ static void updateModifiers(ImGuiIO & _io)
     _io.KeySuper = luke::modifier(luke::KeyModifier::Command);
 }
 
-ImGuiInterface::ImGuiInterface() :
-    m_renderDevice(nullptr),
-    m_time(0),
-    m_bMousePressed{ false, false, false }
+ImGuiInterface::ImGuiInterface()
+    : m_renderDevice(nullptr), m_time(0), m_bMousePressed{ false, false, false }
 {
 }
 
@@ -966,13 +971,13 @@ QuickDraw::DrawCallBuffer & QuickDraw::drawCalls()
     return m_drawCalls;
 }
 
-RenderWindow::RenderWindow() :
-    m_renderDevice(nullptr),
-    m_bShowWindowMetrics(false),
-    m_fpsIndex(0),
-    m_fpsSMASum(0),
-    m_fpsAvg(0),
-    m_frameCount(0)
+RenderWindow::RenderWindow()
+    : m_renderDevice(nullptr)
+    , m_bShowWindowMetrics(false)
+    , m_fpsIndex(0)
+    , m_fpsSMASum(0)
+    , m_fpsAvg(0)
+    , m_frameCount(0)
 {
     for (Size i = 0; i < m_fpsBuffer.count(); ++i)
         m_fpsBuffer[i] = 0.0;
