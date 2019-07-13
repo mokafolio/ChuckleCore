@@ -1017,6 +1017,8 @@ void RenderWindow::updateQuickDrawSize()
 Error RenderWindow::enableDefaultUI(const char * _uiFontURI, Float32 _uiFontSize)
 {
     STICK_ASSERT(!m_gui);
+    printf("ENABLE def ui \n");
+    return Error();
     // m_gui = makeUnique<ImGuiInterface>();
     // return m_gui->init(*m_renderDevice, *this, _uiFontURI, _uiFontSize);
 }
