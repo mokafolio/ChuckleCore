@@ -150,6 +150,7 @@ ImGuiInterface::ImGuiInterface()
 
 ImGuiInterface::~ImGuiInterface()
 {
+    printf("ImGuiInterface::~ImGuiInterface()\n");
     if (m_renderDevice)
     {
         //@TODO:Cleanup
