@@ -76,6 +76,6 @@ chuckleCoreDep = declare_dependency(link_with : chuckleCore,
     dependencies: deps, 
     include_directories: incDirs)
 
-if get_option('buildExamples') == true
+if get_option('buildExamples') == true and meson.is_subproject() == false
     subdir('Examples')
 endif
