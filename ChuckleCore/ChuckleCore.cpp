@@ -596,7 +596,7 @@ Error QuickDraw::init(RenderDevice * _rd, Allocator & _alloc)
         return res.error();
 
     UInt8 whitePixel[4] = { 255, 255, 255, 255 };
-    m_whiteTex->loadPixels(1, 1, 1, &whitePixel, DataType::UInt8, TextureFormat::RGBA8);
+    m_whiteTex->loadPixels(1, 1, 1, &whitePixel, DataType::UInt8, TextureFormat::RGBA8, 1);
 
     m_tpPVar = m_pipeline->variable("transformProjection");
     m_pipeTex = m_pipeline->texture("tex");
