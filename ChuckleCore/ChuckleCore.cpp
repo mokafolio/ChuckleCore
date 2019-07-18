@@ -1059,6 +1059,7 @@ Error RenderWindow::saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _
 {
     m_tmpImage->resize(_w, _h);
     m_renderDevice->readPixels(_x, _y, _w, _h, TextureFormat::RGBA8, (void *)m_tmpImage->bytePtr());
+    m_tmpImage->flipRows();
     return m_tmpImage->save(_path);
 }
 
