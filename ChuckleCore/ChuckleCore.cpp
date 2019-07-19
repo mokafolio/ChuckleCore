@@ -153,7 +153,6 @@ ImGuiInterface::ImGuiInterface()
 
 ImGuiInterface::~ImGuiInterface()
 {
-    printf("ImGuiInterface::~ImGuiInterface()\n");
     if (m_renderDevice)
     {
         //@TODO:Cleanup
@@ -1184,11 +1183,16 @@ Error RenderWindow::run()
         m_lastFrameTime = now;
         Window::swapBuffers();
 
-        //figure out the time to sleep if any (to hit target fps)
-        if(m_targetFps)
+        // figure out the time to sleep if any (to hit target fps)
+        if (m_targetFps)
         {
-            auto sleepDur = m_clock.now() - now;
-            Thread::sleepFor(sleepDur);
+            auto workTime = m_clock.now() - now;
+            auto targetFrameTimeMS = 1.0 / *m_targetFps * 1000;
+            if (workTime.milliseconds() < targetFrameTimeMS)
+            {
+                auto sleepDur = Duration::fromMilliseconds(targetFrameTimeMS) - workTime;
+                Thread::sleepFor(sleepDur);
+            }
         }
     }
 
