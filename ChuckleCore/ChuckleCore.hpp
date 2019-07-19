@@ -219,7 +219,10 @@ class STICK_API RenderWindow : public Window
     RenderDevice & renderDevice() const;
     void setDrawFunction(DrawFunction _func);
     Error run();
+
+    void setFrameRate(Float64 _fps);
     Float64 fps() const;
+    Float64 targetFps() const;
     Size frameCount() const;
     bool isShowingWindowMetrics() const;
     ImGuiInterface * imGuiInterface();
@@ -269,6 +272,8 @@ class STICK_API RenderWindow : public Window
     Size m_fpsIndex;
     Float64 m_fpsSMASum;
     Float64 m_fpsAvg;
+
+    stick::Maybe<Float64> m_targetFps;
     Size m_frameCount;
 };
 

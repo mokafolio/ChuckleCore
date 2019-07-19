@@ -9,6 +9,8 @@
 
 #include <whereami.h>
 
+#include <Stick/Thread.hpp>
+
 namespace chuckle
 {
 
@@ -1181,6 +1183,13 @@ Error RenderWindow::run()
         ++m_frameCount;
         m_lastFrameTime = now;
         Window::swapBuffers();
+
+        //figure out the time to sleep if any (to hit target fps)
+        if(m_targetFps)
+        {
+            auto sleepDur = m_clock.now() - now;
+            Thread::sleepFor(sleepDur);
+        }
     }
 
     return Error();
@@ -1189,6 +1198,11 @@ Error RenderWindow::run()
 Float64 RenderWindow::fps() const
 {
     return m_fpsAvg;
+}
+
+Float64 RenderWindow::targetFps() const
+{
+    return m_targetFps ? *m_targetFps : std::numeric_limits<Float64>::infinity();
 }
 
 Size RenderWindow::frameCount() const
