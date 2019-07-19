@@ -1195,6 +1195,16 @@ Error RenderWindow::run()
     return Error();
 }
 
+void RenderWindow::setTargetFps(Float64 _fps)
+{
+    m_targetFps = _fps;
+}
+
+void RenderWindow::removeTargetFps()
+{
+    m_targetFps.reset();
+}
+
 Float64 RenderWindow::fps() const
 {
     return m_fpsAvg;

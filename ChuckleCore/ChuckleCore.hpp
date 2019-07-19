@@ -220,7 +220,8 @@ class STICK_API RenderWindow : public Window
     void setDrawFunction(DrawFunction _func);
     Error run();
 
-    void setFrameRate(Float64 _fps);
+    void setTargetFps(Float64 _fps);
+    void removeTargetFps();
     Float64 fps() const;
     Float64 targetFps() const;
     Size frameCount() const;
