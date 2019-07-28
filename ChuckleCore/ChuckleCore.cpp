@@ -167,14 +167,14 @@ ImGuiInterface::~ImGuiInterface()
         // Texture * m_texture;
         // Sampler * m_sampler;
 
+        ImGui::DestroyContext();
+
         m_renderDevice->destroyProgram(m_program);
         m_renderDevice->destroyPipeline(m_pipeline);
         m_renderDevice->destroyVertexBuffer(m_vertexBuffer);
         m_renderDevice->destroyIndexBuffer(m_indexBuffer);
         m_renderDevice->destroyTexture(m_texture);
         m_renderDevice->destroySampler(m_sampler);
-
-        ImGui::DestroyContext();
     }
 }
 
