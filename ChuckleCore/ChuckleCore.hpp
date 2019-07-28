@@ -27,7 +27,7 @@ using namespace luke;
 using namespace dab;
 using namespace pic;
 
-//to resolve ambiguity between crunch::LineSegment and paper::LineSegment
+// to resolve ambiguity between crunch::LineSegment and paper::LineSegment
 using LineSegment = paper::LineSegment;
 
 STICK_API_ENUM_CLASS(FileDialogFlags){ Open = 1 << 0,      // Create an open file dialog.
@@ -121,6 +121,7 @@ class STICK_API QuickDraw
         Mat4f tp;
         VertexDrawMode mode;
         const Texture * texture;
+        const Sampler * sampler;
     };
 
     using DrawCallBuffer = stick::DynamicArray<DrawCall>;
@@ -153,7 +154,12 @@ class STICK_API QuickDraw
 
     void rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
     void lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
-    void tex(const Texture * _tex, Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
+    void tex(const Texture * _tex,
+             Float32 _minX,
+             Float32 _minY,
+             Float32 _maxX,
+             Float32 _maxY,
+             const Sampler * _sampler = nullptr);
 
     void lines(const Vec2f * _ptr, Size _count);
     void lines(const Vec3f * _ptr, Size _count);
@@ -170,14 +176,27 @@ class STICK_API QuickDraw
     void rects(const Vec2f * _points, Size _count, Float32 _radius);
     void lineRects(const Vec2f * _points, Size _count, Float32 _radius);
 
-    void drawVertices(const Vertex * _vertices, Size _count, VertexDrawMode _mode, Texture * _tex = nullptr);
+    void drawVertices(const Vertex * _vertices,
+                      Size _count,
+                      VertexDrawMode _mode,
+                      const Texture * _tex = nullptr,
+                      const Sampler * _sampler = nullptr);
 
     // GeometryBuffer & geometryBuffer();
     DrawCallBuffer & drawCalls();
 
+    const Sampler * defaultSampler() const;
+    const Sampler * bilinearSampler() const;
+    const Sampler * nearestSampler() const;
+
   private:
     template <class T>
-    void addDrawCall(const T *, Size, const ColorRGBA &, VertexDrawMode, Texture *);
+    void addDrawCall(const T *,
+                     Size,
+                     const ColorRGBA &,
+                     VertexDrawMode,
+                     const Texture * _t = nullptr,
+                     const Sampler * _s = nullptr);
 
     RenderDevice * m_renderDevice;
     MatrixStack m_transformStack;
@@ -190,8 +209,9 @@ class STICK_API QuickDraw
 
     Program * m_program;
     Pipeline * m_pipeline;
-    Texture * m_whiteTex; //default texture used if no other one is bound
+    Texture * m_whiteTex; // default texture used if no other one is bound
     Sampler * m_sampler;
+    Sampler * m_samplerNearest;
     PipelineVariable * m_tpPVar;
     PipelineTexture * m_pipeTex;
     // PipelineTexture * m_pipeTex;
@@ -315,35 +335,29 @@ class STICK_API PaperWindow : public RenderWindow
     bool m_bAutoResize;
 };
 
-template<class BaseWindowT>
+template <class BaseWindowT>
 class RenderBufferWindowT : public BaseWindowT
 {
-public:
-
+  public:
     using DrawFunction = typename BaseWindowT::DrawFunction;
 
     RenderBufferWindowT()
     {
-
     }
 
     ~RenderBufferWindowT()
     {
-        
     }
 
     Error open(const WindowSettings & _settings)
     {
-
     }
 
     void setDrawFunction(DrawFunction _func) override
     {
-
     }
 
-private:
-
+  private:
     RenderBuffer * m_renderBuffer;
     Texture * m_colorTarget;
     Texture * m_depthTarget;

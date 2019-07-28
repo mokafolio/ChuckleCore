@@ -613,6 +613,13 @@ Error QuickDraw::init(RenderDevice * _rd, Allocator & _alloc)
     else
         return res.error();
 
+    SamplerSettings ns;
+    ns.filtering = TextureFiltering::Nearest;
+    if (auto res = m_renderDevice->createSampler(ns))
+        m_samplerNearest = res.get();
+    else
+        return res.error();
+
     UInt8 whitePixel[4] = { 255, 255, 255, 255 };
     m_whiteTex->loadPixels(1, 1, 1, &whitePixel, DataType::UInt8, TextureFormat::RGBA8);
 
@@ -728,7 +735,7 @@ void QuickDraw::addToPass(RenderPass * _pass)
         {
             m_tpPVar->setMat4f(dc.tp.ptr());
             if (lastTex != dc.texture)
-                m_pipeTex->set(dc.texture, m_sampler);
+                m_pipeTex->set(dc.texture, dc.sampler);
             _pass->drawMesh(m_mesh, m_pipeline, dc.vertexOffset, dc.vertexCount, dc.mode);
             lastTex = dc.texture;
         }
@@ -740,9 +747,10 @@ void QuickDraw::addToPass(RenderPass * _pass)
 void QuickDraw::drawVertices(const Vertex * _vertices,
                              Size _count,
                              VertexDrawMode _mode,
-                             Texture * _tex)
+                             const Texture * _tex,
+                             const Sampler * _sampler)
 {
-    addDrawCall(_vertices, _count, ColorRGBA(), _mode, _tex);
+    addDrawCall(_vertices, _count, ColorRGBA(), _mode, _tex, _sampler);
 }
 
 void QuickDraw::flush()
@@ -753,6 +761,21 @@ void QuickDraw::flush()
                                     m_geometryBuffer.count() * sizeof(Vertex));
         m_geometryBuffer.clear();
     }
+}
+
+const Sampler * QuickDraw::defaultSampler() const
+{
+    return bilinearSampler();
+}
+
+const Sampler * QuickDraw::bilinearSampler() const
+{
+    return m_sampler;
+}
+
+const Sampler * QuickDraw::nearestSampler() const
+{
+    return m_samplerNearest;
 }
 
 // void QuickDraw::beginPass(RenderPass * _pass)
@@ -829,7 +852,7 @@ void QuickDraw::rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
 }
 
 void QuickDraw::tex(
-    const Texture * _tex, Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
+    const Texture * _tex, Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY, const Sampler * _s)
 {
     _addVertex(m_geometryBuffer, { Vec3f(_minX, _minY, 0), m_color, Vec2f(0, 0) });
     _addVertex(m_geometryBuffer, { Vec3f(_minX, _maxY, 0), m_color, Vec2f(0, 1) });
@@ -840,7 +863,7 @@ void QuickDraw::tex(
                          4,
                          transformProjection(),
                          VertexDrawMode::TriangleStrip,
-                         _tex });
+                         _tex, _s ? _s : defaultSampler()});
 }
 
 void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
@@ -867,12 +890,21 @@ void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _m
 }
 
 template <class T>
-void QuickDraw::addDrawCall(
-    const T * _ptr, Size _count, const ColorRGBA & _col, VertexDrawMode _drawMode, Texture * _tex)
+void QuickDraw::addDrawCall(const T * _ptr,
+                            Size _count,
+                            const ColorRGBA & _col,
+                            VertexDrawMode _drawMode,
+                            const Texture * _tex,
+                            const Sampler * _sampler)
 {
     Size voff = m_geometryBuffer.count();
     addToGeometryBuffer(m_geometryBuffer, _ptr, _count, _col);
-    m_drawCalls.append({ voff, _count, transformProjection(), _drawMode, _tex });
+    m_drawCalls.append({ voff,
+                         _count,
+                         transformProjection(),
+                         _drawMode,
+                         _tex ? _tex : m_whiteTex,
+                         _sampler ? _sampler : defaultSampler() });
 
     // setTransformProjectionForDrawCall();
     // m_currentPass->drawMesh(m_mesh, m_pipeline, voff, _count, _drawMode);
@@ -883,8 +915,7 @@ void QuickDraw::lineStrip(const Vec2f * _ptr, Size _count, bool _bClosed)
     addDrawCall(_ptr,
                 _count,
                 m_color,
-                _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip,
-                m_whiteTex);
+                _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip);
 }
 
 void QuickDraw::lineStrip(const Vec3f * _ptr, Size _count, bool _bClosed)
@@ -892,8 +923,7 @@ void QuickDraw::lineStrip(const Vec3f * _ptr, Size _count, bool _bClosed)
     addDrawCall(_ptr,
                 _count,
                 m_color,
-                _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip,
-                m_whiteTex);
+                _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip);
 }
 
 void QuickDraw::lineStrip(const QuickDraw::Vertex * _ptr, Size _count, bool _bClosed)
@@ -901,38 +931,37 @@ void QuickDraw::lineStrip(const QuickDraw::Vertex * _ptr, Size _count, bool _bCl
     addDrawCall(_ptr,
                 _count,
                 m_color,
-                _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip,
-                m_whiteTex);
+                _bClosed ? VertexDrawMode::LineLoop : VertexDrawMode::LineStrip);
 }
 
 void QuickDraw::lines(const Vec2f * _ptr, Size _count)
 {
-    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines, m_whiteTex);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines);
 }
 
 void QuickDraw::lines(const Vec3f * _ptr, Size _count)
 {
-    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines, m_whiteTex);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines);
 }
 
 void QuickDraw::lines(const Vertex * _ptr, Size _count)
 {
-    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines, m_whiteTex);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Lines);
 }
 
 void QuickDraw::points(const Vec2f * _ptr, Size _count)
 {
-    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points, m_whiteTex);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points);
 }
 
 void QuickDraw::points(const Vec3f * _ptr, Size _count)
 {
-    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points, m_whiteTex);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points);
 }
 
 void QuickDraw::points(const Vertex * _ptr, Size _count)
 {
-    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points, m_whiteTex);
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points);
 }
 
 void QuickDraw::rects(const Vec2f * _points, Size _count, Float32 _radius)
@@ -960,7 +989,7 @@ void QuickDraw::rects(const Vec2f * _points, Size _count, Float32 _radius)
         _addVertex(m_geometryBuffer, { pos + bla, m_color, Vec2f(0) });
     }
     m_drawCalls.append(
-        { off, _count * 6, transformProjection(), VertexDrawMode::Triangles, m_whiteTex });
+        { off, _count * 6, transformProjection(), VertexDrawMode::Triangles, m_whiteTex, m_sampler });
 }
 
 void QuickDraw::lineRects(const Vec2f * _points, Size _count, Float32 _radius)
@@ -993,7 +1022,7 @@ void QuickDraw::lineRects(const Vec2f * _points, Size _count, Float32 _radius)
         _addVertex(m_geometryBuffer, { pos + tla, m_color });
     }
     m_drawCalls.append(
-        { off, _count * 8, transformProjection(), VertexDrawMode::Lines, m_whiteTex });
+        { off, _count * 8, transformProjection(), VertexDrawMode::Lines, m_whiteTex, m_sampler });
 }
 
 // QuickDraw::GeometryBuffer & QuickDraw::geometryBuffer()
