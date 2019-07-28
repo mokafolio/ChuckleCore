@@ -120,7 +120,7 @@ class STICK_API QuickDraw
         Size vertexCount;
         Mat4f tp;
         VertexDrawMode mode;
-        Texture * texture;
+        const Texture * texture;
     };
 
     using DrawCallBuffer = stick::DynamicArray<DrawCall>;
@@ -153,6 +153,7 @@ class STICK_API QuickDraw
 
     void rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
     void lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
+    void tex(const Texture * _tex, Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
 
     void lines(const Vec2f * _ptr, Size _count);
     void lines(const Vec3f * _ptr, Size _count);
@@ -200,6 +201,17 @@ class STICK_API QuickDraw
     DrawCallBuffer m_drawCalls;
 };
 
+// namespace detail
+// {
+//     template<class...Behvs>
+//     class WindowBehaviors
+//     {
+//     public:
+
+//         std::tuple<Behvs...> m_behaviors;
+//     };
+// }
+
 class STICK_API RenderWindow : public Window
 {
   public:
@@ -217,7 +229,7 @@ class STICK_API RenderWindow : public Window
     Error saveFrame(const char * _path, UInt32 _x, UInt32 _y, UInt32 _w, UInt32 _h);
     Error saveFrame(const char * _path);
     RenderDevice & renderDevice() const;
-    void setDrawFunction(DrawFunction _func);
+    virtual void setDrawFunction(DrawFunction _func);
     Error run();
 
     void setTargetFps(Float64 _fps);
@@ -301,6 +313,41 @@ class STICK_API PaperWindow : public RenderWindow
     Document m_doc;
     tarp::TarpRenderer m_paperRenderer;
     bool m_bAutoResize;
+};
+
+template<class BaseWindowT>
+class RenderBufferWindowT : public BaseWindowT
+{
+public:
+
+    using DrawFunction = typename BaseWindowT::DrawFunction;
+
+    RenderBufferWindowT()
+    {
+
+    }
+
+    ~RenderBufferWindowT()
+    {
+        
+    }
+
+    Error open(const WindowSettings & _settings)
+    {
+
+    }
+
+    void setDrawFunction(DrawFunction _func) override
+    {
+
+    }
+
+private:
+
+    RenderBuffer * m_renderBuffer;
+    Texture * m_colorTarget;
+    Texture * m_depthTarget;
+    Program * m_textureProgram;
 };
 
 // This mainly houses paper related path utilities that don't really make sense to sit inside paper

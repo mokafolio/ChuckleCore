@@ -157,6 +157,23 @@ ImGuiInterface::~ImGuiInterface()
     {
         //@TODO:Cleanup
 
+        //         Program * m_program;
+        // Pipeline * m_pipeline;
+        // PipelineVariable * m_projPVar;
+        // PipelineTexture * m_pipeTex;
+        // VertexBuffer * m_vertexBuffer;
+        // IndexBuffer * m_indexBuffer;
+        // Mesh * m_mesh;
+        // Texture * m_texture;
+        // Sampler * m_sampler;
+
+        m_renderDevice->destroyProgram(m_program);
+        m_renderDevice->destroyPipeline(m_pipeline);
+        m_renderDevice->destroyVertexBuffer(m_vertexBuffer);
+        m_renderDevice->destroyIndexBuffer(m_indexBuffer);
+        m_renderDevice->destroyTexture(m_texture);
+        m_renderDevice->destroySampler(m_sampler);
+
         ImGui::DestroyContext();
     }
 }
@@ -706,7 +723,7 @@ void QuickDraw::addToPass(RenderPass * _pass)
         _pass->setViewport(
             m_viewport.min().x, m_viewport.min().y, m_viewport.width(), m_viewport.height());
 
-        Texture * lastTex = nullptr;
+        const Texture * lastTex = nullptr;
         for (auto & dc : m_drawCalls)
         {
             m_tpPVar->setMat4f(dc.tp.ptr());
@@ -809,6 +826,21 @@ void QuickDraw::rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
     // setTransformProjectionForDrawCall();
     // m_currentPass->drawMesh(
     //     m_mesh, m_pipeline, m_geometryBuffer.count() - 4, 4, VertexDrawMode::TriangleStrip);
+}
+
+void QuickDraw::tex(
+    const Texture * _tex, Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
+{
+    _addVertex(m_geometryBuffer, { Vec3f(_minX, _minY, 0), m_color, Vec2f(0, 0) });
+    _addVertex(m_geometryBuffer, { Vec3f(_minX, _maxY, 0), m_color, Vec2f(0, 1) });
+    _addVertex(m_geometryBuffer, { Vec3f(_maxX, _minY, 0), m_color, Vec2f(1, 0) });
+    _addVertex(m_geometryBuffer, { Vec3f(_maxX, _maxY, 0), m_color, Vec2f(1, 1) });
+
+    m_drawCalls.append({ m_geometryBuffer.count() - 4,
+                         4,
+                         transformProjection(),
+                         VertexDrawMode::TriangleStrip,
+                         _tex });
 }
 
 void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
