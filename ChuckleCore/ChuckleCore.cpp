@@ -157,7 +157,7 @@ ImGuiInterface::~ImGuiInterface()
     {
         //@TODO:Cleanup
 
-        //         Program * m_program;
+        // Program * m_program;
         // Pipeline * m_pipeline;
         // PipelineVariable * m_projPVar;
         // PipelineTexture * m_pipeTex;
@@ -1020,6 +1020,8 @@ RenderWindow::RenderWindow()
 
 RenderWindow::~RenderWindow()
 {
+    if (m_gui)
+        m_gui.reset();
     destroyRenderDevice(m_renderDevice);
 }
 
