@@ -49,6 +49,9 @@ STICK_API Float32 randomf(Float32 _min = 0.0f, Float32 _max = 1.0f);
 STICK_API Float64 randomd(Float64 _min = 0.0, Float64 _max = 1.0);
 STICK_API Int32 randomi(Int32 _min = 0, Int32 _max = std::numeric_limits<Int32>::max());
 STICK_API UInt32 randomui(UInt32 _min = 0, UInt32 _max = std::numeric_limits<UInt32>::max());
+STICK_API Vec2f randomVec2f(Float32 _minX = -1.0f, Float32 _maxX = 1.0f);
+STICK_API Vec2f randomVec2f(Float32 _minX, Float32 _maxX, Float32 _minY, Float32 _maxY);
+
 
 STICK_API void setNoiseSeed(Int32 _seed);
 STICK_API void randomizeNoiseSeed();
