@@ -1169,6 +1169,8 @@ Error RenderWindow::run()
         auto now = m_clock.now();
         Float64 dur = m_lastFrameTime ? (now - *m_lastFrameTime).seconds() : 1.0 / 60.0;
         luke::pollEvents();
+        this->enableRenderContext();
+        
         Error err;
         if (m_gui)
         {
