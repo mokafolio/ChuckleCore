@@ -239,6 +239,7 @@ class STICK_API RenderWindow : public Window
 {
   public:
     using DrawFunction = std::function<Error(Float64)>;
+    using FrameFinishedCallback = std::function<Error()>;
 
     RenderWindow();
     virtual ~RenderWindow();
@@ -253,6 +254,7 @@ class STICK_API RenderWindow : public Window
     Error saveFrame(const char * _path);
     RenderDevice & renderDevice() const;
     virtual void setDrawFunction(DrawFunction _func);
+    virtual void setFrameFinishedCallback(FrameFinishedCallback _cb);
     Error run();
 
     void setTargetFps(Float64 _fps);
@@ -295,6 +297,7 @@ class STICK_API RenderWindow : public Window
     RenderDevice * m_renderDevice;
     ImageUniquePtr m_tmpImage;
     DrawFunction m_drawFunc;
+    FrameFinishedCallback m_frameFinishedCallback;
     SystemClock m_clock;
     Maybe<SystemClock::TimePoint> m_lastFrameTime;
     QuickDraw m_quickDraw;

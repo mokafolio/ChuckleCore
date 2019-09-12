@@ -1156,6 +1156,11 @@ void RenderWindow::setDrawFunction(DrawFunction _func)
     m_drawFunc = _func;
 }
 
+void RenderWindow::setFrameFinishedCallback(FrameFinishedCallback _cb)
+{
+    m_frameFinishedCallback = _cb;
+}
+
 Error RenderWindow::run()
 {
     if (!m_drawFunc)
@@ -1170,7 +1175,7 @@ Error RenderWindow::run()
         Float64 dur = m_lastFrameTime ? (now - *m_lastFrameTime).seconds() : 1.0 / 60.0;
         luke::pollEvents();
         this->enableRenderContext();
-        
+
         Error err;
         if (m_gui)
         {
@@ -1247,6 +1252,13 @@ Error RenderWindow::run()
         err = m_renderDevice->endPass(defaultPass);
         if (err)
             return err;
+
+        if(m_frameFinishedCallback)
+        {
+            err = m_frameFinishedCallback();
+            if(err)
+                return err;
+        }
 
         // update the fps calculation
         Float64 fps = 1.0 / dur;
