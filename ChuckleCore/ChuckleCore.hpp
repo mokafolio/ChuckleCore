@@ -107,6 +107,9 @@ class STICK_API QuickDraw
     //@TODO: Add more drawing operations
     //@TODO: Add a way to draw textures (mainly for debugging purposes)
   public:
+
+    static constexpr Size s_defaultCircleSubdivisionCount = 20;
+
     struct Vertex
     {
         Vec3f vertex;
@@ -157,6 +160,10 @@ class STICK_API QuickDraw
 
     void rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
     void lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY);
+
+    void circle(Float32 _x, Float32 _y, Float32 _radius, Size _subdivisionCount = s_defaultCircleSubdivisionCount);
+    void lineCircle(Float32 _x, Float32 _y, Float32 _radius, Size _subdivisionCount = s_defaultCircleSubdivisionCount);
+
     void tex(const Texture * _tex,
              Float32 _minX,
              Float32 _minY,

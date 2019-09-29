@@ -904,6 +904,54 @@ void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _m
     //     m_mesh, m_pipeline, m_geometryBuffer.count() - 4, 4, VertexDrawMode::LineLoop);
 }
 
+static Size _addCircleGeometry(Float32 _x,
+                               Float32 _y,
+                               Float32 _radius,
+                               Size _subdivisionCount,
+                               QuickDraw::GeometryBuffer & _buff,
+                               const ColorRGBA & _color,
+                               bool _bIsSolid)
+{
+    Size ret = 0;
+    if (_bIsSolid)
+    {
+        _addVertex(_buff, { Vec3f(_x, _y, 0), _color, Vec2f(0) });
+        ++ret;
+    }
+
+    Float32 radStep = crunch::Constants<Float32>::twoPi() / static_cast<Float32>(_subdivisionCount);
+    for (Size i = 0; i <= _subdivisionCount; ++i)
+    {
+        Float32 currentStep = radStep * i;
+        _addVertex(_buff,
+                   { Vec3f(_x + std::cos(currentStep) * _radius,
+                           _y + std::sin(currentStep) * _radius,
+                           0.0),
+                     _color,
+                     Vec2f(0) });
+        ++ret;
+    }
+    return ret;
+}
+
+void QuickDraw::circle(Float32 _x, Float32 _y, Float32 _radius, Size _subdivisionCount)
+{
+    Size off = m_geometryBuffer.count();
+    Size count =
+        _addCircleGeometry(_x, _y, _radius, _subdivisionCount, m_geometryBuffer, m_color, true);
+    m_drawCalls.append(
+        { off, count, transformProjection(), VertexDrawMode::TriangleFan, m_whiteTex, m_sampler });
+}
+
+void QuickDraw::lineCircle(Float32 _x, Float32 _y, Float32 _radius, Size _subdivisionCount)
+{
+    Size off = m_geometryBuffer.count();
+    Size count =
+        _addCircleGeometry(_x, _y, _radius, _subdivisionCount, m_geometryBuffer, m_color, false);
+    m_drawCalls.append(
+        { off, count, transformProjection(), VertexDrawMode::LineLoop, m_whiteTex, m_sampler });
+}
+
 template <class T>
 void QuickDraw::addDrawCall(const T * _ptr,
                             Size _count,
@@ -973,7 +1021,7 @@ void QuickDraw::points(const Vertex * _ptr, Size _count)
     addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points);
 }
 
-void QuickDraw::convexPolygon(const Vec2f * _points, Size _count)
+void QuickDraw::convexPolygon(const Vec2f * _ptr, Size _count)
 {
     addDrawCall(_ptr, _count, m_color, VertexDrawMode::TriangleFan);
 }
@@ -1258,10 +1306,10 @@ Error RenderWindow::run()
         if (err)
             return err;
 
-        if(m_frameFinishedCallback)
+        if (m_frameFinishedCallback)
         {
             err = m_frameFinishedCallback();
-            if(err)
+            if (err)
                 return err;
         }
 

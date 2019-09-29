@@ -62,6 +62,9 @@ int main(int _argc, const char * _args[])
             window.drawPathOutline(circle, ColorRGBA(1, 1, 0, 1));
             window.drawItemBoundingBox(circle, ColorRGBA(1, 0, 1, 1), true);
 
+            window.quickDraw().setColor(ColorRGBA(1.0f, 1.0f, 0.0f, 1.0f));
+            window.quickDraw().lineCircle(100, 100, 100);
+
             return rd.endPass(pass);
         });
 
