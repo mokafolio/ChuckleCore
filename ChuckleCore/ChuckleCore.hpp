@@ -178,6 +178,7 @@ class STICK_API QuickDraw
 
     void rects(const Vec2f * _points, Size _count, Float32 _radius);
     void lineRects(const Vec2f * _points, Size _count, Float32 _radius);
+    void convexPolygon(const Vec2f * _points, Size _count);
 
     void drawVertices(const Vertex * _vertices,
                       Size _count,

@@ -973,6 +973,11 @@ void QuickDraw::points(const Vertex * _ptr, Size _count)
     addDrawCall(_ptr, _count, m_color, VertexDrawMode::Points);
 }
 
+void QuickDraw::convexPolygon(const Vec2f * _points, Size _count)
+{
+    addDrawCall(_ptr, _count, m_color, VertexDrawMode::TriangleFan);
+}
+
 void QuickDraw::rects(const Vec2f * _points, Size _count, Float32 _radius)
 {
     Size off = m_geometryBuffer.count();
