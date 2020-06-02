@@ -854,7 +854,8 @@ void QuickDraw::rect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
                          4,
                          transformProjection(),
                          VertexDrawMode::TriangleStrip,
-                         m_whiteTex });
+                         m_whiteTex,
+                         defaultSampler() });
 
     // setTransformProjectionForDrawCall();
     // m_currentPass->drawMesh(
@@ -878,7 +879,7 @@ void QuickDraw::tex(const Texture * _tex,
                          transformProjection(),
                          VertexDrawMode::TriangleStrip,
                          _tex,
-                         _s ? _s : defaultSampler() });
+                        defaultSampler() });
 }
 
 void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
@@ -897,7 +898,8 @@ void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _m
                          4,
                          transformProjection(),
                          VertexDrawMode::LineLoop,
-                         m_whiteTex });
+                         m_whiteTex,
+                         defaultSampler() });
 
     // setTransformProjectionForDrawCall();
     // m_currentPass->drawMesh(

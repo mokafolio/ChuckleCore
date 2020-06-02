@@ -349,34 +349,34 @@ class STICK_API PaperWindow : public RenderWindow
     bool m_bAutoResize;
 };
 
-template <class BaseWindowT>
-class RenderBufferWindowT : public BaseWindowT
-{
-  public:
-    using DrawFunction = typename BaseWindowT::DrawFunction;
+// template <class BaseWindowT>
+// class RenderBufferWindowT : public BaseWindowT
+// {
+//   public:
+//     using DrawFunction = typename BaseWindowT::DrawFunction;
 
-    RenderBufferWindowT()
-    {
-    }
+//     RenderBufferWindowT()
+//     {
+//     }
 
-    ~RenderBufferWindowT()
-    {
-    }
+//     ~RenderBufferWindowT()
+//     {
+//     }
 
-    Error open(const WindowSettings & _settings)
-    {
-    }
+//     Error open(const WindowSettings & _settings)
+//     {
+//     }
 
-    void setDrawFunction(DrawFunction _func) override
-    {
-    }
+//     void setDrawFunction(DrawFunction _func) override
+//     {
+//     }
 
-  private:
-    RenderBuffer * m_renderBuffer;
-    Texture * m_colorTarget;
-    Texture * m_depthTarget;
-    Program * m_textureProgram;
-};
+//   private:
+//     RenderBuffer * m_renderBuffer;
+//     Texture * m_colorTarget;
+//     Texture * m_depthTarget;
+//     Program * m_textureProgram;
+// };
 
 // This mainly houses paper related path utilities that don't really make sense to sit inside paper
 // directly.
