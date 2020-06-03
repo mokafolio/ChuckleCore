@@ -624,7 +624,7 @@ Error QuickDraw::init(RenderDevice * _rd, Allocator & _alloc)
         return res.error();
 
     SamplerSettings ns;
-    ns.filtering = TextureFiltering::Nearest;
+    ns.filtering = TextureFiltering::Bilinear;
     if (auto res = m_renderDevice->createSampler(ns))
         m_samplerNearest = res.get();
     else
@@ -879,7 +879,7 @@ void QuickDraw::tex(const Texture * _tex,
                          transformProjection(),
                          VertexDrawMode::TriangleStrip,
                          _tex,
-                        defaultSampler() });
+                        _s });
 }
 
 void QuickDraw::lineRect(Float32 _minX, Float32 _minY, Float32 _maxX, Float32 _maxY)
